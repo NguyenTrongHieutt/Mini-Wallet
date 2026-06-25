@@ -16,9 +16,7 @@ sequenceDiagram
     participant Field as TransField
     participant Validation as TransValidation
     participant Definition as TransDefinition
-    participant Ledger as Pocket / Ledger
-    participant Entry as PocketEntry
-    participant Receipt as Transaction
+    participant MongoExec as MongoTransactionExecutor
 
     %% =========================
     %% STEP 1: REQUEST
@@ -149,22 +147,21 @@ sequenceDiagram
 
     Engine->>Definition: ExecuteTransaction(TRANSBODY, glSteps)
 
-    Definition->>Ledger: Start session.withTransaction()
+    Definition->>MongoExec: Start session.withTransaction()
 
-    Ledger->>Ledger: Step 1 debit SENDERID by AMOUNT
-    Ledger->>Ledger: Step 1 credit RECEIVERID by AMOUNT
-    Ledger->>Entry: Create PocketEntry<br/>stepOrder=1, amount=AMOUNT
+    Definition->>MongoExec: Step 1 debit SENDERID by AMOUNT
+    Definition->>MongoExec: Step 1 credit RECEIVERID by AMOUNT
+    Definition->>MongoExec: Create PocketEntry<br/>stepOrder=1, amount=AMOUNT
 
-    Ledger->>Ledger: Step 2 debit SENDERID by DEBITFEE
-    Ledger->>Ledger: Step 2 credit SYSTEM_POCKET by DEBITFEE
-    Ledger->>Entry: Create PocketEntry<br/>stepOrder=2, amount=DEBITFEE
+    Definition->>MongoExec: Step 2 debit SENDERID by DEBITFEE
+    Definition->>MongoExec: Step 2 credit SYSTEM_POCKET by DEBITFEE
+    Definition->>MongoExec: Create PocketEntry<br/>stepOrder=2, amount=DEBITFEE
 
-    Ledger->>Receipt: Create Transaction receipt<br/>status=done
+    Definition->>MongoExec: Create Transaction receipt<br/>status=done
 
-    Ledger->>Trail: Update status = done
+    Definition->>MongoExec: Update status = done
 
-
-    Ledger-->>Definition: Commit transaction
+    MongoExec-->>Definition: Commit transaction
     Definition-->>Engine: Execute success
     Note over Engine: actions.verify.enabled = false<br/>Skip provider action
 
@@ -195,9 +192,7 @@ sequenceDiagram
     participant Field as TransField
     participant Validation as TransValidation
     participant Definition as TransDefinition
-    participant Ledger as Pocket / Ledger
-    participant Entry as PocketEntry
-    participant Receipt as Transaction
+      participant MongoExec as MongoTransactionExecutor
 
     %% =========================
     %% OFFICER TRIGGER
@@ -334,17 +329,17 @@ sequenceDiagram
 
     Engine->>Definition: ExecuteTransaction(TRANSBODY, glSteps)
 
-    Definition->>Ledger: Start session.withTransaction()
+    Definition->>MongoExec: Start session.withTransaction()
 
-    Ledger->>Ledger: Step 1 debit BANK_POCKET by AMOUNT
-    Ledger->>Ledger: Step 1 credit RECEIVERID by AMOUNT
-    Ledger->>Entry: Create PocketEntry<br/>stepOrder=1, amount=AMOUNT
+    Definition->>MongoExec: Step 1 debit BANK_POCKET by AMOUNT
+    Definition->>MongoExec: Step 1 credit RECEIVERID by AMOUNT
+    Definition->>MongoExec: Create PocketEntry<br/>stepOrder=1, amount=AMOUNT
 
-    Ledger->>Receipt: Create Transaction receipt<br/>status=done
+    Definition->>MongoExec: Create Transaction receipt<br/>status=done
 
-    Ledger->>Trail: Update status = done
+    Definition->>MongoExec: Update status = done
 
-    Ledger-->>Definition: Commit transaction
+    MongoExec-->>Definition: Commit transaction
     Definition-->>Engine: Execute success
     Note over Engine: CASH_IN actions.verify.enabled = false<br/>Skip provider action
 
@@ -377,9 +372,7 @@ sequenceDiagram
     participant Field as TransField
     participant Validation as TransValidation
     participant Definition as TransDefinition
-    participant Ledger as Pocket / Ledger
-    participant Entry as PocketEntry
-    participant Receipt as Transaction
+    participant MongoExec as MongoTransactionExecutor
      participant Mock as Mock Biller Service
 
     %% =========================
@@ -517,22 +510,22 @@ sequenceDiagram
 
         Engine->>Definition: ExecuteTransaction(TRANSBODY, glSteps)
 
-        Definition->>Ledger: Start session.withTransaction()
+        Definition->>MongoExec: Start session.withTransaction()
 
-        Ledger->>Ledger: Step 1 debit SENDERID by AMOUNT
-        Ledger->>Ledger: Step 1 credit RECEIVERID by AMOUNT
-        Ledger->>Entry: Create PocketEntry<br/>stepOrder=1, amount=AMOUNT
+        Definition->>MongoExec: Step 1 debit SENDERID by AMOUNT
+        Definition->>MongoExec: Step 1 credit RECEIVERID by AMOUNT
+        Definition->>MongoExec: Create PocketEntry<br/>stepOrder=1, amount=AMOUNT
 
-        Ledger->>Ledger: Step 2 debit SENDERID by DEBITFEE
-        Ledger->>Ledger: Step 2 credit SYSTEM_POCKET by DEBITFEE
-        Ledger->>Entry: Create PocketEntry<br/>stepOrder=2, amount=DEBITFEE
+        Definition->>MongoExec: Step 2 debit SENDERID by DEBITFEE
+        Definition->>MongoExec: Step 2 credit SYSTEM_POCKET by DEBITFEE
+        Definition->>MongoExec: Create PocketEntry<br/>stepOrder=2, amount=DEBITFEE
 
-        Ledger->>Receipt: Create Transaction receipt<br/>status=done
+        Definition->>MongoExec: Create Transaction receipt<br/>status=done
 
 
-        Ledger->>Trail: Update status = done
+        Definition->>MongoExec: Update status = done
 
-        Ledger-->>Definition: Commit transaction
+        MongoExec-->>Definition: Commit transaction
         Definition-->>Engine: Execute success
     Note over Engine: actions.verify.enabled = true<br/>Run provider payment before ledger
     Engine->>Provider: Find Provider by type + PROVIDERCODE
@@ -575,9 +568,7 @@ autonumber
     participant Field as TransField
     participant Validation as TransValidation
     participant Definition as TransDefinition
-    participant Ledger as Pocket / Ledger
-    participant Entry as PocketEntry
-    participant Receipt as Transaction
+      participant MongoExec as MongoTransactionExecutor
     participant External as Mock External Service
 
     %% =========================
@@ -753,14 +744,12 @@ autonumber
     Definition-->>Engine: glSteps
 
     Engine->>Definition: ExecuteTransaction(TRANSBODY, glSteps)
-    Definition->>Ledger: Start session.withTransaction()
+    Definition->>MongoExec: Start session.withTransaction()
 
-    Ledger->>Ledger: Debit and credit pockets by glSteps
-    Ledger->>Entry: Create PocketEntry list
-    Ledger->>Receipt: Create Transaction receipt
-    Ledger->>Trail: Update status = done
-
-    Ledger-->>Definition: Commit transaction
+    Definition->>MongoExec: Debit and credit pockets by glSteps
+    Definition->>MongoExec: Create PocketEntry list
+    Definition->>MongoExec: Create Transaction receipt<br/>status=done
+    MongoExec-->>Definition: Commit transaction
     Definition-->>Engine: Execute success
     alt actions.verify.enabled = true
         Engine->>Provider: Find Provider config
