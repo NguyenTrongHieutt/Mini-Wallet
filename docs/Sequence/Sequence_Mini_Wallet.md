@@ -144,25 +144,24 @@ sequenceDiagram
     Engine->>Definition: Load TransDefinition by serviceId
     Definition-->>Engine: glSteps
 
-    Engine->>Definition: ExecuteTransaction(TRANSBODY, glSteps)
 
-    Definition->>MongoExec: Start session.withTransaction()
+    Engine->>MongoExec: Start session.withTransaction()
 
-    Definition->>MongoExec: Step 1 debit SENDERID by AMOUNT
-    Definition->>MongoExec: Step 1 credit RECEIVERID by AMOUNT
-    Definition->>MongoExec: Create PocketEntry<br/>stepOrder=1, amount=AMOUNT
+    Engine->>MongoExec: Step 1 debit SENDERID by AMOUNT
+    Engine->>MongoExec: Step 1 credit RECEIVERID by AMOUNT
+    Engine->>MongoExec: Create PocketEntry<br/>stepOrder=1, amount=AMOUNT
 
-    Definition->>MongoExec: Step 2 debit SENDERID by DEBITFEE
-    Definition->>MongoExec: Step 2 credit SYSTEM_POCKET by DEBITFEE
-    Definition->>MongoExec: Create PocketEntry<br/>stepOrder=2, amount=DEBITFEE
+    Engine->>MongoExec: Step 2 debit SENDERID by DEBITFEE
+    Engine->>MongoExec: Step 2 credit SYSTEM_POCKET by DEBITFEE
+    Engine->>MongoExec: Create PocketEntry<br/>stepOrder=2, amount=DEBITFEE
 
-    Definition->>MongoExec: Create Transaction receipt<br/>status=done
+    Engine->>MongoExec: Create Transaction receipt<br/>status=done
 
-    Definition->>MongoExec: Update Trail status = done
-
-    MongoExec-->>Definition: Commit transaction
-    Definition-->>Engine: Execute success
+    Engine->>MongoExec: Update Trail status = done
     Note over Engine: actions == null <br/>Skip provider action
+    Engine->>MongoExec: Commit transaction
+    MongoExec-->>Engine: Transaction success
+
 
     Engine->>Engine: releasePocket(SENDERID)
 
@@ -326,21 +325,21 @@ sequenceDiagram
     Engine->>Definition: Load TransDefinition by serviceId
     Definition-->>Engine: glSteps
 
-    Engine->>Definition: ExecuteTransaction(TRANSBODY, glSteps)
+  
 
-    Definition->>MongoExec: Start session.withTransaction()
+    Engine->>MongoExec: Start session.withTransaction()
 
-    Definition->>MongoExec: Step 1 debit BANK_POCKET by AMOUNT
-    Definition->>MongoExec: Step 1 credit RECEIVERID by AMOUNT
-    Definition->>MongoExec: Create PocketEntry<br/>stepOrder=1, amount=AMOUNT
+    Engine->>MongoExec: Step 1 debit BANK_POCKET by AMOUNT
+    Engine->>MongoExec: Step 1 credit RECEIVERID by AMOUNT
+    Engine->>MongoExec: Create PocketEntry<br/>stepOrder=1, amount=AMOUNT
 
-    Definition->>MongoExec: Create Transaction receipt<br/>status=done
+    Engine->>MongoExec: Create Transaction receipt<br/>status=done
 
-    Definition->>MongoExec: Update Trail status = done
-
-    MongoExec-->>Definition: Commit transaction
-    Definition-->>Engine: Execute success
+    Engine->>MongoExec: Update Trail status = done
     Note over Engine: CASH_IN actions == null <br/>Skip provider action
+    MongoExec->>Engine: Commit transaction
+    MongoExec-->>Engine: Transaction success
+   
 
     Engine->>Engine: releasePocket(SENDERID)
 
