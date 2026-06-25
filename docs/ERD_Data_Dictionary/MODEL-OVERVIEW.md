@@ -372,7 +372,7 @@ Có thể thống nhất các status cơ bản:
 
 ## 6.2 `Transaction`
 
-### Field gợi ý
+### Field 
 
 | Field         | Kiểu                  | Bắt buộc | Ghi chú                                              |
 | ------------- | --------------------- | -------- | ---------------------------------------------------- |
@@ -399,7 +399,7 @@ Có thể thống nhất các status cơ bản:
 
 ## 7. Session
 
-### Field gợi ý
+### Field 
 
 | Field        | Kiểu         | Bắt buộc | Ghi chú                        |
 | ------------ | ------------ | -------- | ------------------------------ |
