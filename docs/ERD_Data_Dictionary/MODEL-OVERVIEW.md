@@ -197,7 +197,6 @@ Có thể thống nhất các status cơ bản:
 | `description`   | String | Không    | Mô tả ngắn                                                                    |
 | `fieldBuilder`  | Array  | Có       | Danh sách rule dựng biến vào `TRANSBODY`                                      |
 | `actions`       | Object | Không    | Cấu hình action ngoài theo từng giai đoạn runtime                             |
-| `amountFormula` | Object | Không    | Cách xác định `AMOUNT`, nếu cần                                               |
 | `fee`           | Object | Có       | { type: 'fixed', value: 100 } hoặc { type: 'percent', value: 0.5, max: 5000 } |
 | `auth`          | Object | Có       | `{ method: 'PIN' }` hoặc `{ method: 'NONE' }`                                 |
 | `status`        | String | Có       | `draft`, `active`, `inactive`                                                 |
@@ -359,6 +358,7 @@ Có thể thống nhất các status cơ bản:
 | `inputMessage`  | Object       | Có       | Request gốc                                      |
 | `outputMessage` | Object       | Có       | Có `TRANSBODY`                                   |
 | `status`        | String       | Có       | `init`, `pending`, `done`, `failed`, `cancelled` |
+| `expiredAt`  | Date         | Có       | Hạn phiên                      |
 | `errorCode`     | String       | Không    | Lỗi cuối nếu có                                  |
 | `errorMessage`  | String       | Không    | Message lỗi                                      |
 
@@ -367,6 +367,7 @@ Có thể thống nhất các status cơ bản:
 - Index: `serviceId`, `status`, `createdAt`.
 - Index: `customerId`, `createdAt`.
 - Index: `officerId`, `createdAt`.
+- Index: `expiredAt`.
 
 ---
 
@@ -414,4 +415,4 @@ Có thể thống nhất các status cơ bản:
 
 - Unique index: `tokenHash`.
 - Index: `userType`, `userId`.
-- TTL index: `expiredAt`, nếu database hỗ trợ.
+- Index: `expiredAt`.
