@@ -158,7 +158,6 @@ Có thể thống nhất các status cơ bản:
 
 ### Index / unique
 
-- Unique index: `(ownerType, ownerId, currency)` với owner có id.
 - Index: `ownerType`, `status`, `currency`.
 
 ---
