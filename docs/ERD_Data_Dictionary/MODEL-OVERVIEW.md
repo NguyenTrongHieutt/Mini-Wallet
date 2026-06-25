@@ -1,4 +1,4 @@
-# Mini-Wallet — Model Overview chi tiết
+# Mini-Wallet — Model Overview 
 
 ---
 
@@ -25,7 +25,6 @@ Hầu hết model nên có các field nền sau:
 | Field | Gợi ý kiểu      | Vai trò           |
 | ----- | --------------- | ----------------- |
 | `_id` | ObjectId / UUID | Khóa chính nội bộ |
-
 | `createdAt` | Date | Thời điểm tạo |
 | `updatedAt` | Date | Thời điểm cập nhật |
 | `createdBy` | Ref | Ai tạo, hữu ích cho admin audit |
