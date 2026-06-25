@@ -41,17 +41,16 @@ sequenceDiagram
     Engine->>Service: Load Service by serviceCode
     Service-->>Engine: Service P2P config
 
-    Engine->>Service: buildTransactionFields(fieldBuilder)
+    Engine->>Service: buildTransactionFields(fieldBuilder,transinput)
     Service-->>Engine: TRANSBODY<br/>USERID, SERVICEID, RECEIVERPHONE,<br/>AMOUNT, SENDERID, RECEIVERID
 
     Engine->>Engine: Set TRANSBODY.TRANSREFID = trail.id
-    Engine->>Trail: Save serviceId = SERVICEID
     Engine->>Trail: Save outputMessage.TRANSBODY
 
     Engine->>Field: validateFields(serviceId, TRANSBODY)
     Field-->>Engine: Valid
 
-    Note over Engine: actions.request.enabled = false<br/>Skip provider action
+    Note over Engine: actions == null = false<br/>Skip provider action
 
     Engine->>Engine: Calculate fee<br/>DEBITFEE = 100<br/>TOTALAMOUNT = AMOUNT + DEBITFEE
 
@@ -94,7 +93,7 @@ sequenceDiagram
     Engine->>Service: Read auth.method
     Service-->>Engine: PIN
 
-    Note over Engine: actions.confirm.enabled = false<br/>Skip provider action
+    Note over Engine: actions == null<br/>Skip provider action
 
 
     Engine-->>NM: authMethod = PIN, transRefId
@@ -121,12 +120,12 @@ sequenceDiagram
     NM->>Trail: findOne(id = TRANSREFID, status = pending)
     Trail-->>NM: trail
     NM-->>Engine: message { trail }
-
+    Engine->>Engine: validateStateAndLockPocket(SENDERID)
+    Engine->>Trail: checkStatusTrail(TRANSREFID)
+    Trail-->>Engine: status pending
     Engine->>Engine: serviceId = trail.service
     Engine->>Service: Load Service by serviceId
     Service-->>Engine: Service P2P config
-
-    Engine->>Engine: validateStateAndLockPocket(SENDERID)
 
     Engine->>Engine: Verify PIN(dataObject.user, pin)
 
@@ -159,11 +158,11 @@ sequenceDiagram
 
     Definition->>MongoExec: Create Transaction receipt<br/>status=done
 
-    Definition->>MongoExec: Update status = done
+    Definition->>MongoExec: Update Trail status = done
 
     MongoExec-->>Definition: Commit transaction
     Definition-->>Engine: Execute success
-    Note over Engine: actions.verify.enabled = false<br/>Skip provider action
+    Note over Engine: actions == null <br/>Skip provider action
 
     Engine->>Engine: releasePocket(SENDERID)
 
@@ -226,17 +225,16 @@ sequenceDiagram
     Engine->>Service: Load Service by serviceCode
     Service-->>Engine: Service CASH_IN config
 
-    Engine->>Service: buildTransactionFields(fieldBuilder)
+    Engine->>Service: buildTransactionFields(fieldBuilder,transinput)
     Service-->>Engine: TRANSBODY<br/>OFFICERID, SERVICEID, RECEIVERPHONE,<br/>AMOUNT, SENDERID=BANK_POCKET, RECEIVERID
 
     Engine->>Engine: Set TRANSBODY.TRANSREFID = trail.id
-    Engine->>Trail: Save serviceId = SERVICEID
     Engine->>Trail: Save outputMessage.TRANSBODY
 
     Engine->>Field: validateFields(serviceId, TRANSBODY)
     Field-->>Engine: Valid
 
-    Note over Engine: CASH_IN actions.request.enabled = false<br/>Skip provider action
+    Note over Engine: CASH_IN actions == null <br/>Skip provider action
 
     Engine->>Engine: Calculate fee<br/>DEBITFEE = 0<br/>TOTALAMOUNT = AMOUNT
 
@@ -276,7 +274,7 @@ sequenceDiagram
     Engine->>Service: Read auth.method
     Service-->>Engine: NONE
 
-    Note over Engine: CASH_IN actions.confirm.enabled = false<br/>Skip provider action
+    Note over Engine: CASH_IN actions==null <br/>Skip provider action
 
     Engine-->>NM: authMethod = NONE, transRefId
     NM-->>TX: Confirm result
@@ -305,12 +303,13 @@ sequenceDiagram
     NM->>Trail: findOne(id = TRANSREFID, status = pending)
     Trail-->>NM: trail
     NM-->>Engine: message { trail }
-
+    Engine->>Engine: validateStateAndLockPocket(SENDERID)
+    Engine->>Trail: checkStatusTrail(TRANSREFID)
+    Trail-->>Engine: status pending
     Engine->>Engine: serviceId = trail.service
     Engine->>Service: Load Service by serviceId
     Service-->>Engine: Service CASH_IN config
 
-    Engine->>Engine: validateStateAndLockPocket(SENDERID)
 
     Note over Engine: auth.method = NONE<br/>Skip PIN verification
 
@@ -337,11 +336,11 @@ sequenceDiagram
 
     Definition->>MongoExec: Create Transaction receipt<br/>status=done
 
-    Definition->>MongoExec: Update status = done
+    Definition->>MongoExec: Update Trail status = done
 
     MongoExec-->>Definition: Commit transaction
     Definition-->>Engine: Execute success
-    Note over Engine: CASH_IN actions.verify.enabled = false<br/>Skip provider action
+    Note over Engine: CASH_IN actions == null <br/>Skip provider action
 
     Engine->>Engine: releasePocket(SENDERID)
 
@@ -398,11 +397,10 @@ sequenceDiagram
     Engine->>Service: Load Service by serviceCode
     Service-->>Engine: Service BILL_PAYMENT config
 
-    Engine->>Service: buildTransactionFields(fieldBuilder)
+    Engine->>Service: buildTransactionFields(fieldBuilder,transinput)
     Service-->>Engine: TRANSBODY<br/>USERID, SERVICEID, PROVIDERCODE,<br/>BILLCODE, SENDERID, RECEIVERID
 
     Engine->>Engine: Set TRANSBODY.TRANSREFID = trail.id
-    Engine->>Trail: Save serviceId = SERVICEID
     Engine->>Trail: Save outputMessage.TRANSBODY
 
     Engine->>Field: validateFields(serviceId, TRANSBODY)
@@ -410,13 +408,13 @@ sequenceDiagram
 
     Note over Engine: actions.request.enabled = true<br/>Run provider inquiry
 
-    Engine->>Provider: Find Provider by type + PROVIDERCODE
+    Engine->>Provider: Find Provider by PROVIDERCODE
     Provider-->>Engine: Provider config<br/>requestUrl, verifyUrl, pocketId
 
     Engine->>Mock: POST requestUrl<br/>billCode
     Mock-->>Engine: Inquiry response<br/>amount, billInf
 
-    Engine->>Engine: Map provider response to TRANSBODY<br/>AMOUNT = response.amount<br/>PROVIDER_REQUEST_REF = response.inquiryRef
+    Engine->>Engine: Map provider response to TRANSBODY<br/>AMOUNT = response.amount
 
     Engine->>Trail: Save updated TRANSBODY
 
@@ -460,7 +458,7 @@ sequenceDiagram
     Engine->>Service: Read auth.method
     Service-->>Engine: PIN
 
-    Note over Engine: actions.confirm.enabled = false<br/>Skip provider action
+    Note over Engine: actions.confirm == null<br/>Skip provider action
 
     Engine-->>NM: authMethod = PIN, transRefId
     NM-->>TX: Confirm result
@@ -486,12 +484,12 @@ sequenceDiagram
     NM->>Trail: findOne(id = TRANSREFID, status = pending)
     Trail-->>NM: trail
     NM-->>Engine: message { trail }
-
+    Engine->>Engine: validateStateAndLockPocket(SENDERID)
+    Engine->>Trail: checkStatusTrail(TRANSREFID)
+    Trail-->>Engine: status pending
     Engine->>Engine: serviceId = trail.service
     Engine->>Service: Load Service by serviceId
     Service-->>Engine: Service BILL_PAYMENT config
-
-    Engine->>Engine: validateStateAndLockPocket(SENDERID)
 
     Engine->>Engine: Verify PIN(dataObject.user, pin)
 
@@ -508,27 +506,24 @@ sequenceDiagram
         Engine->>Definition: Load TransDefinition by serviceId
         Definition-->>Engine: glSteps
 
-        Engine->>Definition: ExecuteTransaction(TRANSBODY, glSteps)
+      
 
-        Definition->>MongoExec: Start session.withTransaction()
+        Engine->>MongoExec: Start session.withTransaction()
 
-        Definition->>MongoExec: Step 1 debit SENDERID by AMOUNT
-        Definition->>MongoExec: Step 1 credit RECEIVERID by AMOUNT
-        Definition->>MongoExec: Create PocketEntry<br/>stepOrder=1, amount=AMOUNT
+        Engine->>MongoExec: Step 1 debit SENDERID by AMOUNT
+        Engine->>MongoExec: Step 1 credit RECEIVERID by AMOUNT
+        Engine->>MongoExec: Create PocketEntry<br/>stepOrder=1, amount=AMOUNT
 
-        Definition->>MongoExec: Step 2 debit SENDERID by DEBITFEE
-        Definition->>MongoExec: Step 2 credit SYSTEM_POCKET by DEBITFEE
-        Definition->>MongoExec: Create PocketEntry<br/>stepOrder=2, amount=DEBITFEE
+        Engine->>MongoExec: Step 2 debit SENDERID by DEBITFEE
+        Engine->>MongoExec: Step 2 credit SYSTEM_POCKET by DEBITFEE
+        Engine->>MongoExec: Create PocketEntry<br/>stepOrder=2, amount=DEBITFEE
 
-        Definition->>MongoExec: Create Transaction receipt<br/>status=done
+        Engine->>MongoExec: Create Transaction receipt<br/>status=done
 
 
-        Definition->>MongoExec: Update status = done
-
-        MongoExec-->>Definition: Commit transaction
-        Definition-->>Engine: Execute success
-    Note over Engine: actions.verify.enabled = true<br/>Run provider payment before ledger
-    Engine->>Provider: Find Provider by type + PROVIDERCODE
+        Engine->>MongoExec: Update Trail status = done
+         Note over Engine: actions.verify.enabled = true<br/>Run provider payment before ledger
+    Engine->>Provider: Find Provider by PROVIDERCODE
     Provider-->>Engine: Provider config<br/>verifyUrl, pocketId
 
     Engine->>Mock: POST verifyUrl<br/>billCode, amount
@@ -539,6 +534,9 @@ sequenceDiagram
         Engine->>Engine: Map provider response to TRANSBODY
 
         Engine->>Trail: Save updated TRANSBODY
+         Engine->>MongoExec: Commit transaction
+        MongoExec-->>Engine:  transaction success
+
 
         Engine->>Engine: releasePocket(SENDERID)
 
@@ -603,11 +601,10 @@ autonumber
     Engine->>Service: Load Service by serviceCode
     Service-->>Engine: Service config
 
-    Engine->>Service: buildTransactionFields(fieldBuilder)
+    Engine->>Service: buildTransactionFields(fieldBuilder,transInput)
     Service-->>Engine: TRANSBODY
 
     Engine->>Engine: Set TRANSBODY.TRANSREFID = trail.id
-    Engine->>Trail: Save serviceId = SERVICEID
     Engine->>Trail: Save outputMessage.TRANSBODY
 
     Engine->>Field: validateFields(serviceId, TRANSBODY)
@@ -620,7 +617,7 @@ autonumber
         External-->>Engine: External response
         Engine->>Engine: Map response to TRANSBODY
         Engine->>Trail: Save updated TRANSBODY
-    else actions.request.enabled = false
+    else actions == null || actions.request == null || actions.request.enabled = false
         Engine->>Engine: Skip request action
     end
 
@@ -675,7 +672,7 @@ autonumber
         External-->>Engine: External response
         Engine->>Engine: Map response to TRANSBODY
         Engine->>Trail: Save updated TRANSBODY
-    else actions.confirm.enabled = false
+    else actions == null || actions.confirm == null ||actions.confirm.enabled = false
         Engine->>Engine: Skip confirm action
     end
 
@@ -719,12 +716,12 @@ autonumber
     NM->>Trail: findOne id = TRANSREFID and status = pending
     Trail-->>NM: trail
     NM-->>Engine: message trail
-
+    Engine->>Engine: validateStateAndLockPocket(SENDERID)
+    Engine->>Trail: checkStatusTrail(TRANSREFID)
+    Trail-->>Engine: status pending
     Engine->>Engine: serviceId = trail.service
     Engine->>Service: Load Service by serviceId
     Service-->>Engine: Service config
-
-    Engine->>Engine: validateStateAndLockPocket(SENDERID)
 
     alt auth.method = PIN
         Engine->>Engine: Verify PIN
@@ -743,22 +740,21 @@ autonumber
     Engine->>Definition: Load TransDefinition by serviceId
     Definition-->>Engine: glSteps
 
-    Engine->>Definition: ExecuteTransaction(TRANSBODY, glSteps)
-    Definition->>MongoExec: Start session.withTransaction()
+  
+    Engine->>MongoExec: Start session.withTransaction()
 
-    Definition->>MongoExec: Debit and credit pockets by glSteps
-    Definition->>MongoExec: Create PocketEntry list
-    Definition->>MongoExec: Create Transaction receipt<br/>status=done
-    MongoExec-->>Definition: Commit transaction
-    Definition-->>Engine: Execute success
-    alt actions.verify.enabled = true
+    Engine->>MongoExec: Debit and credit pockets by glSteps
+    Engine->>MongoExec: Create PocketEntry list
+    Engine->>MongoExec: Create Transaction receipt<br/>status=done
+    Engine->>MongoExec: Update Trail status = done
+     alt actions.verify.enabled = true 
         Engine->>Provider: Find Provider config
         Provider-->>Engine: verifyUrl and config
         Engine->>External: POST verifyUrl
         External-->>Engine: External response
 
         alt External action failed
-            Engine->>Trail: Update status = failed
+            Engine->>Trail: Update trail status = failed
             Engine->>Engine: releasePocket(SENDERID)
             Engine-->>NM: Failed result
             NM-->>TX: Failed result
@@ -775,9 +771,13 @@ autonumber
             Engine->>Engine: Map response to TRANSBODY
             Engine->>Trail: Save updated TRANSBODY
         end
-    else actions.verify.enabled = false
+    else actions == null || actions.verify == null || actions.verify.enabled = false
         Engine->>Engine: Skip verify action
     end
+    Engine->>MongoExec: Commit transaction
+    MongoExec-->>Engine: Transaction success
+  
+   
 
     Engine->>Engine: releasePocket(SENDERID)
 
