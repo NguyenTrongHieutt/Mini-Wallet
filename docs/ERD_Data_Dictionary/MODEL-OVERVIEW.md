@@ -116,7 +116,7 @@ Có thể thống nhất các status cơ bản:
 
 ### Index / unique
 
-- Unique compound index: `type`, `code`.
+- Unique index: `type`, `category`, `code`.
 - Index: `status`.
 - Index: `type`.
 - Index: `category`.
@@ -205,7 +205,7 @@ Có thể thống nhất các status cơ bản:
 
 | Field      | Kiểu   | Bắt buộc | Ghi chú                                      |
 | ---------- | ------ | -------- | -------------------------------------------- |
-| `provider` | Object | Không    | Quy định lấy provider nào để gọi action      |
+| `provider` | Object | Có    | Quy định lấy provider nào để gọi action      |
 | `request`  | Object | Không    | Action chạy ở bước Request                   |
 | `confirm`  | Object | Không    | Action chạy ở bước Confirm, nếu provider cần |
 | `verify`   | Object | Không    | Action chạy ở bước Verify                    |
@@ -225,7 +225,6 @@ Có thể thống nhất các status cơ bản:
 
 | Field        | Kiểu   | Bắt buộc | Ý nghĩa                                                           |
 | ------------ | ------ | -------- | ----------------------------------------------------------------- |
-| `type`       | String | Có       | Loại provider cần tìm, ví dụ `biller`, `telco`, `bank`, `voucher` |
 | `codeSource` | String | Có       | Nguồn lấy provider code: `TRANSBODY` hoặc `FIXED`                 |
 | `codeField`  | String | Không    | Field trong `TRANSBODY` chứa provider code, ví dụ `PROVIDERCODE`  |
 | `codeValue`  | String | Không    | Provider code cố định nếu `codeSource = FIXED`, ví dụ `EVN`       |
