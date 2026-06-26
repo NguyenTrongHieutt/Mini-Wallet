@@ -6,8 +6,8 @@
 
 Core Engine là lớp xử lý nghiệp vụ giao dịch ví theo mô hình cấu hình động. Thay vì viết riêng luồng xử lý cho từng nghiệp vụ như chuyển tiền, nạp tiền hay thanh toán hóa đơn, engine đọc cấu hình từ các model nghiệp vụ và chạy cùng một pipeline:
 
-1. `Request`: dựng dữ liệu giao dịch, validate đầu vào, gọi inquiry nếu cần và trả preview.
-2. `Confirm`: kiểm tra giao dịch đang pending, xác định phương thức xác thực, gọi api bên ngoài nếu có.
+1. `Request`: dựng dữ liệu giao dịch, validate đầu vào, validate nghiệp vụ, gọi inquiry nếu cần và trả preview.
+2. `Confirm`: xác định phương thức xác thực, gọi api bên ngoài nếu có.
 3. `Verify`: xác thực, khóa ví, validate lại, chạy bút toán debit-credit và tạo biên lai, gọi api bên ngoài nếu có.
 
 Các thành phần chính của engine gồm API/Orchestrator, Transaction facade, NeonMessage router, Runtime Process, nhóm model cấu hình nghiệp vụ, nhóm model ledger và nhóm model runtime giao dịch.
