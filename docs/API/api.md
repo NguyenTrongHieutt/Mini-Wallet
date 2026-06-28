@@ -2,6 +2,24 @@
 
 > Tất cả API sử dụng method `POST`.
 
+> Quy ước dự án phải tuân thủ.
+
+**Response & mã lỗi**
+
+- **HTTP status luôn là 200**, kể cả khi nghiệp vụ lỗi. Client phân biệt thành/bại bằng trường `err`, **không** bằng HTTP status.
+- **Envelope thống nhất:** mọi API trả về dạng `{ err, message, ...data }`. Quy ước: `err === 200` là thành công; `err !== 200` là mã lỗi nghiệp vụ.
+- Việc đóng gói response được tập trung ở `api/responses/` (ví dụ `res.ok(data)`, `res.error(...)`, `res.badRequest()`, `res.serverError()`), không tự `res.json` rải rác trong controller. `return` khi gọi response để dừng luồng xử lý.
+- **Mã lỗi tập trung** ở một service dùng chung (ví dụ `respCode`), không hard-code chuỗi/số lỗi rải rác.
+
+**Routing**
+
+- **Blueprint tắt** (`actions`, `rest`, `shortcuts` đều `false`) → Sails không tự sinh API; mọi endpoint phải **tự khai** trong `config/routes.js`.
+- **Mọi API dùng method `POST`**.
+
+**Policy & xác thực**
+
+- **Deny-by-default:** `config/policies.js` đặt `'*': false`; action nào không được khai báo policy sẽ bị chặn. Chỉ API công khai mới đặt `true`.
+
 ---
 
 ## 1. Public APIs
@@ -25,16 +43,16 @@
 
 ### 2.2. Ví customer
 
-| API                                    | Mục đích     |
-| -------------------------------------- | ------------ |
-| `POST /api/v1/customer/wallet/balance` | Xem số dư ví |
+| API                                    | Mục đích                                  |
+| -------------------------------------- | ----------------------------------------- |
+| `POST /api/v1/customer/wallet/balance` | Xem số dư ví, chỉ xem được của chính mình |
 
 ### 2.3. Service và Provider
 
-| API                                    | Mục đích                          |
-| -------------------------------------- | --------------------------------- |
-| `POST /api/v1/customer/services/list`  | Xem danh sách service đang active |
-| `POST /api/v1/customer/providers/list` | Xem danh sách biller/provider     |
+| API                                    | Mục đích                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------- |
+| `POST /api/v1/customer/services/list`  | Xem danh sách service đang active, không trả về fieldBuilder, auth,actions, fee |
+| `POST /api/v1/customer/providers/list` | Xem danh sách provider có status active, không trả về các URL, PocketID         |
 
 ### 2.4. Giao dịch
 
@@ -82,16 +100,16 @@
 | `POST /api/v1/officer/pockets/lock`   | Khóa ví            |
 | `POST /api/v1/officer/pockets/unlock` | Mở khóa ví         |
 
-### 3.4. Quản lý provider/biller
+### 3.4. Quản lý provider
 
-| API                                         | Mục đích                         |
-| ------------------------------------------- | -------------------------------- |
-| `POST /api/v1/officer/providers/create`     | Tạo biller/provider và ví biller |
-| `POST /api/v1/officer/providers/list`       | Xem danh sách provider           |
-| `POST /api/v1/officer/providers/detail`     | Xem chi tiết provider            |
-| `POST /api/v1/officer/providers/update`     | Cập nhật thông tin provider      |
-| `POST /api/v1/officer/providers/activate`   | Kích hoạt provider               |
-| `POST /api/v1/officer/providers/deactivate` | Tắt provider                     |
+| API                                         | Mục đích                    |
+| ------------------------------------------- | --------------------------- |
+| `POST /api/v1/officer/providers/create`     | Tạo provider và ví provider |
+| `POST /api/v1/officer/providers/list`       | Xem danh sách provider      |
+| `POST /api/v1/officer/providers/detail`     | Xem chi tiết provider       |
+| `POST /api/v1/officer/providers/update`     | Cập nhật thông tin provider |
+| `POST /api/v1/officer/providers/activate`   | Kích hoạt provider          |
+| `POST /api/v1/officer/providers/deactivate` | Tắt provider                |
 
 ### 3.5. Quản lý service/config
 
@@ -99,13 +117,17 @@
 | -------------------------------------------------------- | ------------------------------------- |
 | `POST /api/v1/officer/services/create`                   | Tạo Service ở trạng thái draft        |
 | `POST /api/v1/officer/services/list`                     | Xem danh sách Service                 |
-| `POST /api/v1/officer/services/detail`                   | Xem chi tiết Service/config           |
+| `POST /api/v1/officer/services/detail`                   | Xem thông tin cơ bản Service          |
 | `POST /api/v1/officer/services/update`                   | Cập nhật thông tin cơ bản của Service |
+| `POST /api/v1/officer/services/trans-fields/list`        | Xem danh sách TransField              |
+| `POST /api/v1/officer/services/trans-validations/list`   | Xem danh sách TransValidation         |
+| `POST /api/v1/officer/services/detail`                   | Xem thông tin cơ bản Service          |
+| `POST /api/v1/officer/services/trans-fields/update`      | Cập nhật `TransField`                 |
+| `POST /api/v1/officer/services/trans-validations/update` | Cập nhật `TransValidation`            |
 | `POST /api/v1/officer/services/field-builder/update`     | Cập nhật `fieldBuilder`               |
-| `POST /api/v1/officer/services/trans-fields/upsert`      | Thêm hoặc cập nhật `TransField`       |
-| `POST /api/v1/officer/services/trans-validations/upsert` | Thêm hoặc cập nhật `TransValidation`  |
-| `POST /api/v1/officer/services/trans-definition/upsert`  | Thêm hoặc cập nhật `glSteps`          |
-| `POST /api/v1/officer/services/validate-config`          | Kiểm tra tính hợp lệ của config       |
+| `POST /api/v1/officer/services/trans-fields/insert`      | Thêm `TransField`                     |
+| `POST /api/v1/officer/services/trans-validations/insert` | Thêm `TransValidation`                |
+| `POST /api/v1/officer/services/trans-definition/update`  | Cập nhật `TransDefinition`            |
 | `POST /api/v1/officer/services/publish`                  | Bật Service                           |
 | `POST /api/v1/officer/services/unpublish`                | Tắt Service                           |
 
