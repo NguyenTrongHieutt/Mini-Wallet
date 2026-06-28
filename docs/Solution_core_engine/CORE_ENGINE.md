@@ -1,4 +1,4 @@
-# Core Engine Components - Mini Wallet
+# Core Engine - Mini Wallet
 
 ---
 
@@ -20,8 +20,8 @@ Các thành phần chính của engine gồm API/Orchestrator, Transaction facad
 | -------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------- |
 | `Controller`               | Nhận request từ client hoặc officer                       | Request body, user info                                                       | Response envelope                  |
 | `TransactionOrchestrator`  | Tự động chạy đủ 3 bước cho nghiệp vụ server-trigger       | Input nghiệp vụ, kết quả từng bước                                            | Response cuối cùng                 |
-| `Transaction.js`           | Facade chuẩn hóa input và gán `TRANSTEP`                  | Request body, user info                                                       | `transInput`                       |
-| `NeonMessage.js`           | Router theo `TRANSTEP` hoặc dựng message runtime          | `transInput`                                                                  | Message có trail                   |
+| `Transaction`              | Facade chuẩn hóa input và gán `TRANSTEP`                  | Request body, user info                                                       | `transInput`                       |
+| `NeonMessage`              | Router theo `TRANSTEP` hoặc dựng message runtime          | `transInput`                                                                  | Message có trail                   |
 | `Runtime Process`          | Trung tâm xử lý nghiệp vụ ví                              | Service config gồm `fieldBuilder`, `actions`, `fee`, `auth`, message có trail | Preview, receipt, trạng thái trail |
 | `Service`                  | Cấu hình nghiệp vụ tổng                                   | `serviceCode`                                                                 | Service config                     |
 | `Provider`                 | Cấu hình đối tác ngoài                                    | `providerCode`                                                                | URL/action config, `pocketId`      |

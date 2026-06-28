@@ -1,4 +1,4 @@
-# Mini-Wallet — Model Overview 
+# Mini-Wallet — Model Overview
 
 ---
 
@@ -22,13 +22,13 @@ Mini-Wallet có 4 nhóm model chính:
 
 Hầu hết model nên có các field nền sau:
 
-| Field | Gợi ý kiểu      | Vai trò           |
-| ----- | --------------- | ----------------- |
-| `_id` | ObjectId / UUID | Khóa chính nội bộ |
-| `createdAt` | Date | Thời điểm tạo |
-| `updatedAt` | Date | Thời điểm cập nhật |
-| `createdBy` | Ref | Ai tạo, hữu ích cho admin audit |
-| `updatedBy` | Ref | Ai sửa gần nhất |
+| Field       | Gợi ý kiểu      | Vai trò                         |
+| ----------- | --------------- | ------------------------------- |
+| `_id`       | ObjectId / UUID | Khóa chính nội bộ               |
+| `createdAt` | Date            | Thời điểm tạo                   |
+| `updatedAt` | Date            | Thời điểm cập nhật              |
+| `createdBy` | Ref             | Ai tạo, hữu ích cho admin audit |
+| `updatedBy` | Ref             | Ai sửa gần nhất                 |
 
 ### 2.2 Quy ước status
 
@@ -190,22 +190,22 @@ Có thể thống nhất các status cơ bản:
 
 ### Field
 
-| Field           | Kiểu   | Bắt buộc | Ghi chú                                                                       |
-| --------------- | ------ | -------- | ----------------------------------------------------------------------------- |
-| `code`          | String | Có       | Ví dụ `P2P_TRANSFER`, duy nhất                                                |
-| `name`          | String | Có       | Tên hiển thị                                                                  |
-| `description`   | String | Không    | Mô tả ngắn                                                                    |
-| `fieldBuilder`  | Array  | Có       | Danh sách rule dựng biến vào `TRANSBODY`                                      |
-| `actions`       | Object | Không    | Cấu hình action ngoài theo từng giai đoạn runtime                             |
-| `fee`           | Object | Có       | { type: 'fixed', value: 100 } hoặc { type: 'percent', value: 0.5, max: 5000 } |
-| `auth`          | Object | Có       | `{ method: 'PIN' }` hoặc `{ method: 'NONE' }`                                 |
-| `status`        | String | Có       | `draft`, `active`, `inactive`                                                 |
+| Field          | Kiểu   | Bắt buộc | Ghi chú                                                                       |
+| -------------- | ------ | -------- | ----------------------------------------------------------------------------- |
+| `code`         | String | Có       | Ví dụ `P2P_TRANSFER`, duy nhất                                                |
+| `name`         | String | Có       | Tên hiển thị                                                                  |
+| `description`  | String | Không    | Mô tả ngắn                                                                    |
+| `fieldBuilder` | Array  | Có       | Danh sách rule dựng biến vào `TRANSBODY`                                      |
+| `actions`      | Object | Không    | Cấu hình action ngoài theo từng giai đoạn runtime                             |
+| `fee`          | Object | Có       | { type: 'fixed', value: 100 } hoặc { type: 'percent', value: 0.5, max: 5000 } |
+| `auth`         | Object | Có       | `{ method: 'PIN' }` hoặc `{ method: 'NONE' }`                                 |
+| `status`       | String | Có       | `draft`, `active`, `inactive`                                                 |
 
 ### `actions`
 
 | Field      | Kiểu   | Bắt buộc | Ghi chú                                      |
 | ---------- | ------ | -------- | -------------------------------------------- |
-| `provider` | Object | Có    | Quy định lấy provider nào để gọi action      |
+| `provider` | Object | Có       | Quy định lấy provider nào để gọi action      |
 | `request`  | Object | Không    | Action chạy ở bước Request                   |
 | `confirm`  | Object | Không    | Action chạy ở bước Confirm, nếu provider cần |
 | `verify`   | Object | Không    | Action chạy ở bước Verify                    |
@@ -223,11 +223,11 @@ Có thể thống nhất các status cơ bản:
 
 ### `provider` trong actions
 
-| Field        | Kiểu   | Bắt buộc | Ý nghĩa                                                           |
-| ------------ | ------ | -------- | ----------------------------------------------------------------- |
-| `codeSource` | String | Có       | Nguồn lấy provider code: `TRANSBODY` hoặc `FIXED`                 |
-| `codeField`  | String | Không    | Field trong `TRANSBODY` chứa provider code, ví dụ `PROVIDERCODE`  |
-| `codeValue`  | String | Không    | Provider code cố định nếu `codeSource = FIXED`, ví dụ `EVN`       |
+| Field        | Kiểu   | Bắt buộc | Ý nghĩa                                                          |
+| ------------ | ------ | -------- | ---------------------------------------------------------------- |
+| `codeSource` | String | Có       | Nguồn lấy provider code: `TRANSBODY` hoặc `FIXED`                |
+| `codeField`  | String | Không    | Field trong `TRANSBODY` chứa provider code, ví dụ `PROVIDERCODE` |
+| `codeValue`  | String | Không    | Provider code cố định nếu `codeSource = FIXED`, ví dụ `EVN`      |
 
 ### `fieldBuilder[]`
 
@@ -235,6 +235,7 @@ Có thể thống nhất các status cơ bản:
 | ----------- | ------------- | -------- | --------------------------------------------------------------- |
 | `order`     | Number        | Có       | Thứ tự chạy                                                     |
 | `name`      | String        | Có       | Tên biến output, ví dụ `SENDERID`, `AMOUNT`                     |
+| `role`      | String        | Có       | Ý nghĩa biến                                                    |
 | `rule`      | String        | Có       | `fixed`, `mapping`, `query`                                     |
 | `source`    | String        | Có       | Nguồn dữ liệu: `body`, `user`, `constant`, `database`           |
 | `variable`  | String        | Không    | Đường dẫn biến input nếu là `mapping`                           |
@@ -255,7 +256,7 @@ Có thể thống nhất các status cơ bản:
 ### Index / unique
 
 - Unique index: `code`.
-- Index: `status`, `action`.
+- Index: `status`.
 
 ## 5.2 `TransField`
 
@@ -357,7 +358,7 @@ Có thể thống nhất các status cơ bản:
 | `inputMessage`  | Object       | Có       | Request gốc                                      |
 | `outputMessage` | Object       | Có       | Có `TRANSBODY`                                   |
 | `status`        | String       | Có       | `init`, `pending`, `done`, `failed`, `cancelled` |
-| `expiredAt`  | Date         | Có       | Hạn phiên                      |
+| `expiredAt`     | Date         | Có       | Hạn phiên                                        |
 | `errorCode`     | String       | Không    | Lỗi cuối nếu có                                  |
 | `errorMessage`  | String       | Không    | Message lỗi                                      |
 
@@ -372,7 +373,7 @@ Có thể thống nhất các status cơ bản:
 
 ## 6.2 `Transaction`
 
-### Field 
+### Field
 
 | Field         | Kiểu                  | Bắt buộc | Ghi chú                                              |
 | ------------- | --------------------- | -------- | ---------------------------------------------------- |
@@ -399,7 +400,7 @@ Có thể thống nhất các status cơ bản:
 
 ## 7. Session
 
-### Field 
+### Field
 
 | Field        | Kiểu         | Bắt buộc | Ghi chú                        |
 | ------------ | ------------ | -------- | ------------------------------ |
