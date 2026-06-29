@@ -11,7 +11,7 @@ module.exports = {
       required: true,
     },
     minorUnit: {
-      type: "number",
+      type: "integer",
       required: true,
       defaultsTo: 0,
     },

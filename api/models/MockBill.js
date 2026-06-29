@@ -11,7 +11,7 @@ module.exports = {
       index: true
     },
     amount: {
-      type: 'number',
+      type: 'integer',
       required: true
     },
     billInfo: {

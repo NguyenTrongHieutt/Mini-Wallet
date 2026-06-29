@@ -26,16 +26,16 @@ module.exports = {
       model: "provider",
     },
     amount: {
-      type: "number",
+      type: "integer",
       required: true,
     },
     fee: {
-      type: "number",
+      type: "integer",
       required: true,
       defaultsTo: 0,
     },
     totalAmount: {
-      type: "number",
+      type: "integer",
       required: true,
     },
     currency: {

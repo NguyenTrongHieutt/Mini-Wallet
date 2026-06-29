@@ -5,7 +5,7 @@ module.exports = {
       required: true,
     },
     stepOrder: {
-      type: "number",
+      type: "integer",
       required: true,
     },
     debitPocketId: {
@@ -17,7 +17,7 @@ module.exports = {
       required: true,
     },
     amount: {
-      type: "number",
+      type: "integer",
       required: true,
     },
     currency: {

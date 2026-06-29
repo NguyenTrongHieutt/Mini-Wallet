@@ -17,7 +17,7 @@ module.exports = {
       required: true,
     },
     balance: {
-      type: "number",
+      type: "integer",
       required: true,
       defaultsTo: 0,
     },
