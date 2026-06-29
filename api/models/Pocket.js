@@ -43,4 +43,14 @@ module.exports = {
       type: "string",
     },
   },
+
+  getActivePocketByOwner: async function (ownerType, ownerId, currencyCode) {
+    const currency = await Currency.loadActive(currencyCode);
+    return Pocket.findOne({
+      ownerType: ownerType,
+      ownerId: String(ownerId),
+      currency: currency.id,
+      status: "active",
+    });
+  },
 };

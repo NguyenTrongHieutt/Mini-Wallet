@@ -29,4 +29,13 @@ module.exports = {
       type: "string",
     },
   },
+
+  loadActive: async function (currencyCode) {
+    const currency = await Currency.findOne({ code: currencyCode || "VND", status: "active" });
+    if (!currency) {
+      throw AppErrorService.create(EnvelopeService.CODE.NOT_FOUND, "CURRENCY_NOT_FOUND");
+    }
+
+    return currency;
+  },
 };

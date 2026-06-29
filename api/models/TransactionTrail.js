@@ -54,4 +54,82 @@ module.exports = {
       type: "string",
     },
   },
+
+  TRAIL_TTL_MS: 15 * 60 * 1000,
+
+  buildMessage: async function (transInput) {
+    if (Number(transInput.TRANSTEP) === NeonMessageService.STEP.REQUEST) {
+      return this.buildRequestMessage(transInput);
+    }
+
+    return this.buildExistingTrailMessage(transInput);
+  },
+
+  buildRequestMessage: async function (transInput) {
+    const service = await Service.loadActiveByCode(transInput.body.serviceCode);
+    const trail = await TransactionTrail.create({
+      serviceId: service.id,
+      customerId: transInput.userType === "customer" ? transInput.user.id : undefined,
+      officerId: transInput.userType === "officer" ? transInput.user.id : undefined,
+      inputMessage: {
+        TRANSTEP: transInput.TRANSTEP,
+        body: transInput.body,
+        userId: String(transInput.user.id),
+        userType: transInput.userType,
+      },
+      outputMessage: {},
+      status: "init",
+      expiredAt: new Date(Date.now() + this.TRAIL_TTL_MS),
+      createdBy: String(transInput.user.id),
+      updatedBy: String(transInput.user.id),
+    });
+
+    return {
+      transInput: transInput,
+      trail: trail,
+    };
+  },
+
+  buildExistingTrailMessage: async function (transInput) {
+    const transRefId = transInput.body.transRefId || transInput.body.TRANSREFID;
+    const trail = await TransactionTrail.findOne({ id: transRefId, status: "pending" });
+
+    if (!trail) {
+      throw AppErrorService.create(EnvelopeService.CODE.NOT_FOUND, "TRANSACTION_TRAIL_NOT_FOUND");
+    }
+
+    return {
+      transInput: transInput,
+      trail: trail,
+      TRANSBODY: trail.outputMessage && trail.outputMessage.TRANSBODY,
+    };
+  },
+
+  updatePending: async function (trail, transBody) {
+    const updated = await TransactionTrail.update(
+      { id: trail.id },
+      {
+        outputMessage: { TRANSBODY: transBody },
+        status: "pending",
+        updatedBy: transBody.USERID,
+      }
+    );
+
+    return updated[0];
+  },
+
+  markFailed: async function (trail, err) {
+    if (!trail || !trail.id) {
+      return;
+    }
+
+    await TransactionTrail.update(
+      { id: trail.id },
+      {
+        status: "failed",
+        errorCode: err && err.messageKey ? err.messageKey : "TRANSACTION_REQUEST_FAILED",
+        errorMessage: err && err.message ? err.message : "TRANSACTION_REQUEST_FAILED",
+      }
+    );
+  },
 };

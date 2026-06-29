@@ -32,4 +32,8 @@ module.exports = {
       type: "string",
     },
   },
+
+  getActiveCustomerByPhone: async function (phone) {
+    return Customer.findOne({ phone: phone, status: "active" });
+  },
 };

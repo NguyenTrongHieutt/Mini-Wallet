@@ -32,7 +32,8 @@ var MESSAGE = {
   PASSWORD_WEAK: "Password must include at least one letter and one number",
   PIN_REQUIRED: "PIN is required",
   PIN_FORMAT_INVALID: "PIN must be exactly 6 digits",
-  DISPLAY_NAME_LENGTH_INVALID: "Display name must be between 2 and 60 characters",
+  DISPLAY_NAME_LENGTH_INVALID:
+    "Display name must be between 2 and 60 characters",
   CURRENCY_FORMAT_INVALID: "Currency must be a 3-letter ISO code",
   CUSTOMER_PHONE_EXISTS: "Customer phone already exists",
   DEFAULT_CURRENCY_NOT_FOUND: "Default currency not found",
@@ -41,6 +42,29 @@ var MESSAGE = {
   LOGIN_SUCCESS: "Login success",
   LOGOUT_SUCCESS: "Logout success",
   UNAUTHENTICATED: "Unauthenticated",
+  TRANSACTION_REQUESTED: "Transaction request created",
+  TRANSACTION_REQUEST_FAILED: "Transaction request failed",
+  TRANSACTION_TRAIL_NOT_FOUND: "Transaction trail not found",
+  SERVICE_CODE_REQUIRED: "Service code is required",
+  SERVICE_NOT_FOUND: "Service not found",
+  SERVICE_INACTIVE: "Service is inactive",
+  TRANSACTION_FIELD_INVALID: "Transaction field is invalid",
+  TRANSACTION_FIELD_BUILD_FAILED: "Transaction field build failed",
+  RECEIVER_PHONE_REQUIRED: "Receiver phone is required",
+  RECEIVER_PHONE_INVALID: "Receiver phone is invalid",
+  RECEIVER_NOT_FOUND: "Receiver not found",
+  AMOUNT_REQUIRED: "Amount is required",
+  AMOUNT_INVALID: "Amount is invalid",
+  CURRENCY_REQUIRED: "Currency is required",
+  CURRENCY_INVALID: "Currency is invalid",
+  CURRENCY_NOT_FOUND: "Currency not found",
+  SENDER_POCKET_NOT_FOUND: "Sender pocket not found",
+  RECEIVER_POCKET_NOT_FOUND: "Receiver pocket not found",
+  SELF_TRANSFER: "Cannot transfer to the same wallet",
+  INSUFFICIENT_BALANCE: "Insufficient balance",
+  UNSUPPORTED_FIELD_BUILDER_RULE: "Unsupported field builder rule",
+  UNSUPPORTED_FIELD_BUILDER_QUERY: "Unsupported field builder query",
+  UNSUPPORTED_VALIDATION_RULE: "Unsupported validation rule",
 
   REQUIRED_AUTH_TOKEN: "Missing bearer token",
   INVALID_TOKEN: "Invalid or expired token",
@@ -61,7 +85,7 @@ module.exports = {
     };
 
     if (data !== undefined) {
-      payload.data = data;
+      payload.data = { ...data };
     }
 
     return payload;
