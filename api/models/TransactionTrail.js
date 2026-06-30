@@ -98,6 +98,15 @@ module.exports = {
       throw AppErrorService.create(EnvelopeService.CODE.NOT_FOUND, "TRANSACTION_TRAIL_NOT_FOUND");
     }
 
+    if (trail.expiredAt && new Date(trail.expiredAt).getTime() < Date.now()) {
+      throw AppErrorService.create(
+        EnvelopeService.CODE.INVALID_STATE,
+        "TRANSACTION_TRAIL_EXPIRED"
+      );
+    }
+
+    this.validateTrailOwner(trail, transInput);
+
     return {
       transInput: transInput,
       trail: trail,
@@ -111,11 +120,31 @@ module.exports = {
       {
         outputMessage: { TRANSBODY: transBody },
         status: "pending",
-        updatedBy: transBody.USERID,
+        updatedBy: transBody.USERID || transBody.OFFICERID,
       }
     );
 
     return updated[0];
+  },
+
+  validateTrailOwner: function (trail, transInput) {
+    if (!transInput || !transInput.user || !transInput.user.id || !transInput.userType) {
+      throw AppErrorService.create(EnvelopeService.CODE.UNAUTHORIZED, "UNAUTHENTICATED");
+    }
+
+    const userId = String(transInput.user.id);
+    if (transInput.userType === "customer" && String(trail.customerId) === userId) {
+      return;
+    }
+
+    if (transInput.userType === "officer" && String(trail.officerId) === userId) {
+      return;
+    }
+
+    throw AppErrorService.create(
+      EnvelopeService.CODE.FORBIDDEN,
+      "TRANSACTION_TRAIL_FORBIDDEN"
+    );
   },
 
   markFailed: async function (trail, err) {

@@ -23,4 +23,22 @@ module.exports = {
       throw err;
     }
   },
+
+  processConfirmStep: async function (transInput) {
+    const message = await NeonMessageService.buildMessage(transInput);
+    const service = await Service.loadActiveById(message.trail.serviceId);
+    const transBody = message.TRANSBODY || {};
+
+    try {
+      const actionResult = await Service.runConfirmAction(service, transBody);
+      const updatedTrail = actionResult
+        ? await TransactionTrail.updatePending(message.trail, transBody)
+        : message.trail;
+
+      return Service.buildConfirmResult(updatedTrail, service);
+    } catch (err) {
+      await TransactionTrail.markFailed(message.trail, err);
+      throw err;
+    }
+  },
 };

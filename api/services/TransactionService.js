@@ -5,6 +5,13 @@ module.exports = {
 
     return NeonMessageService.routeProcess(transInput);
   },
+
+  engineConfirmTransaction: async function (body, info) {
+    const transInput = normalizeInput(body, info);
+    transInput.TRANSTEP = NeonMessageService.STEP.CONFIRM;
+
+    return NeonMessageService.routeProcess(transInput);
+  },
 };
 
 function normalizeInput(body, info) {

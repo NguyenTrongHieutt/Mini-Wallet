@@ -146,8 +146,29 @@ module.exports = {
       expiredAt: trail.expiredAt,
     };
   },
+
+  buildConfirmResult: function (trail, service) {
+    const auth = service.auth || {};
+
+    return {
+      transRefId: String(trail.id),
+      service: {
+        id: String(service.id),
+        code: service.code,
+        name: service.name,
+      },
+      authMethod: auth.method || "NONE",
+      status: trail.status,
+      expiredAt: trail.expiredAt,
+    };
+  },
+
   runRequestAction: async function (service, transBody) {
     return runAction(service, transBody, "request", "requestUrl");
+  },
+
+  runConfirmAction: async function (service, transBody) {
+    return runAction(service, transBody, "confirm", "confirmUrl");
   },
 
   sortByOrder: function (items) {

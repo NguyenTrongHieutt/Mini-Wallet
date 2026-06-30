@@ -9,6 +9,8 @@ module.exports = {
     switch (Number(transInput.TRANSTEP)) {
       case this.STEP.REQUEST:
         return RuntimeProcessService.processRequestStep(transInput);
+      case this.STEP.CONFIRM:
+        return RuntimeProcessService.processConfirmStep(transInput);
       default:
         throw AppErrorService.create(
           EnvelopeService.CODE.BAD_REQUEST,
