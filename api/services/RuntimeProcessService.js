@@ -9,7 +9,6 @@ module.exports = {
         message.transInput,
         message.trail,
       );
-
       await TransField.validateFields(service, transBody);
       await Service.runRequestAction(service, transBody);
       Service.calculateFee(service, transBody);
@@ -54,6 +53,7 @@ module.exports = {
     try {
       lockedPocket = await Pocket.validateStateAndLockPocket(
         transBody.SENDERID,
+        message.trail.id,
       );
       await TransactionTrail.checkStatusTrail(message.trail.id);
       Service.verifyAuth(service, message.transInput);
@@ -182,7 +182,6 @@ module.exports = {
               { $set: { checksum: debitChecksum, updatedAt: new Date() } },
               { session: tx.session },
             );
-
             const credited = await tx.collections.pockets.findOneAndUpdate(
               {
                 _id: tx.toObjectId(creditPocket.id),
@@ -312,14 +311,14 @@ module.exports = {
         throw err;
       } finally {
         await session.endSession();
-        await Pocket.releaseLockedPocket(lockedPocket);
+        await Pocket.releaseLockedPocket(lockedPocket, message.trail.id);
         lockedPocket = null;
       }
 
       return Service.buildReceipt(receipt, service);
     } catch (err) {
       if (lockedPocket) {
-        await Pocket.releaseLockedPocket(lockedPocket);
+        await Pocket.releaseLockedPocket(lockedPocket, message.trail.id);
       }
 
       throw err;

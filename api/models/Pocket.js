@@ -35,6 +35,15 @@ module.exports = {
       defaultsTo: "active",
       required: true,
     },
+    lockedBy: {
+      type: "string",
+    },
+    lockedAt: {
+      type: "datetime",
+    },
+    lockExpiredAt: {
+      type: "datetime",
+    },
     createdBy: {
       type: "string",
     },
@@ -42,18 +51,21 @@ module.exports = {
       type: "string",
     },
   },
-
+  LOCK_TTL_MS: 5 * 60 * 1000,
   getActivePocketByOwner: async function (ownerType, ownerId, currencyCode) {
     const currency = await Currency.loadActive(currencyCode);
-    return Pocket.findOne({
+    const pocket = await Pocket.findOne({
       ownerType: ownerType,
       ownerId: String(ownerId),
       currency: currency.id,
-      status: "active",
     });
+    if (!pocket || pocket.status === "inactive") {
+      return null;
+    }
+    return pocket;
   },
 
-  validateStateAndLockPocket: async function (senderPocketId) {
+  validateStateAndLockPocket: async function (senderPocketId, transRefId) {
     const pocket = await Pocket.findOne({ id: senderPocketId });
 
     if (!pocket) {
@@ -61,6 +73,37 @@ module.exports = {
         EnvelopeService.CODE.NOT_FOUND,
         "SENDER_POCKET_NOT_FOUND",
       );
+    }
+
+    if (
+      pocket.status === "locked" &&
+      String(pocket.lockedBy) === String(transRefId)
+    ) {
+      const now = new Date();
+      const updated = await Pocket.update(
+        { id: senderPocketId, status: "locked" },
+        {
+          status: "locked",
+          lockedBy: String(transRefId),
+          lockedAt: now,
+          lockExpiredAt: new Date(now.getTime() + this.LOCK_TTL_MS),
+          updatedBy: "engine",
+        },
+      );
+
+      if (!updated || !updated[0]) {
+        throw AppErrorService.create(
+          EnvelopeService.CODE.INVALID_STATE,
+          "SENDER_POCKET_LOCK_FAILED",
+          { pocketId: senderPocketId },
+        );
+      }
+
+      return updated[0];
+    }
+    if (pocket.status === "locked" && isLockExpired(pocket)) {
+      await Pocket.releaseLockedPocket(pocket, pocket.lockedBy);
+      pocket.status = "active";
     }
 
     if (pocket.status !== "active") {
@@ -71,9 +114,16 @@ module.exports = {
       );
     }
 
+    const now = new Date();
     const updated = await Pocket.update(
       { id: senderPocketId, status: "active" },
-      { status: "locked", updatedBy: "engine" },
+      {
+        status: "locked",
+        lockedBy: String(transRefId),
+        lockedAt: now,
+        lockExpiredAt: new Date(now.getTime() + this.LOCK_TTL_MS),
+        updatedBy: "engine",
+      },
     );
 
     if (!updated || !updated[0]) {
@@ -87,15 +137,23 @@ module.exports = {
     return updated[0];
   },
 
-  releaseLockedPocket: async function (pocket) {
+  releaseLockedPocket: async function (pocket, transRefId) {
     if (!pocket || !pocket.id) {
       return null;
     }
 
-    const updated = await Pocket.update(
-      { id: pocket.id, status: "locked" },
-      { status: "active", updatedBy: "engine" },
-    );
+    const criteria = { id: pocket.id, status: "locked" };
+    if (transRefId) {
+      criteria.lockedBy = String(transRefId);
+    }
+
+    const updated = await Pocket.update(criteria, {
+      status: "active",
+      lockedBy: null,
+      lockedAt: null,
+      lockExpiredAt: null,
+      updatedBy: "engine",
+    });
 
     return updated && updated[0];
   },
@@ -124,3 +182,10 @@ module.exports = {
     }
   },
 };
+
+function isLockExpired(pocket) {
+  return (
+    pocket.lockExpiredAt &&
+    new Date(pocket.lockExpiredAt).getTime() <= Date.now()
+  );
+}

@@ -79,7 +79,10 @@ async function validateSenderAccountSufficiency(validation, transBody) {
     id: transBody.SENDERID,
   });
 
-  if (!senderPocket || ["active", "locked"].indexOf(senderPocket.status) === -1) {
+  if (
+    !senderPocket ||
+    ["active", "locked"].indexOf(senderPocket.status) === -1
+  ) {
     throw AppErrorService.create(
       EnvelopeService.CODE.NOT_FOUND,
       "SENDER_POCKET_NOT_FOUND",
