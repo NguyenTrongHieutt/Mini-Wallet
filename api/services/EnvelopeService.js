@@ -65,6 +65,12 @@ var MESSAGE = {
   UNSUPPORTED_FIELD_BUILDER_RULE: "Unsupported field builder rule",
   UNSUPPORTED_FIELD_BUILDER_QUERY: "Unsupported field builder query",
   UNSUPPORTED_VALIDATION_RULE: "Unsupported validation rule",
+  PROVIDER_CODE_REQUIRED: "Provider code is required",
+  PROVIDER_NOT_FOUND: "Provider not found",
+  PROVIDER_ACTION_URL_REQUIRED: "Provider action URL is required",
+  PROVIDER_ACTION_FAILED: "Provider action failed",
+  PROVIDER_ACTION_TIMEOUT: "Provider action timeout",
+  PROVIDER_RESPONSE_INVALID: "Provider response is invalid",
 
   REQUIRED_AUTH_TOKEN: "Missing bearer token",
   INVALID_TOKEN: "Invalid or expired token",
