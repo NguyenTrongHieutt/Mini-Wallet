@@ -16,4 +16,13 @@ module.exports = {
       return EnvelopeService.handleError(res, err, "TRANSACTION_CONFIRM_FAILED");
     }
   },
+
+  verify: async function (req, res) {
+    try {
+      const data = await TransactionService.engineVerifyTransaction(req.body, req.info);
+      return res.ok(EnvelopeService.CODE.OK, "TRANSACTION_VERIFIED", data);
+    } catch (err) {
+      return EnvelopeService.handleError(res, err, "TRANSACTION_VERIFY_FAILED");
+    }
+  },
 };

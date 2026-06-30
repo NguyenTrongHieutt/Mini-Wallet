@@ -11,6 +11,8 @@ module.exports = {
         return RuntimeProcessService.processRequestStep(transInput);
       case this.STEP.CONFIRM:
         return RuntimeProcessService.processConfirmStep(transInput);
+      case this.STEP.VERIFY:
+        return RuntimeProcessService.processVerifyStep(transInput);
       default:
         throw AppErrorService.create(
           EnvelopeService.CODE.BAD_REQUEST,

@@ -37,7 +37,10 @@ module.exports = {
 
   validateTransaction: async function (service, transBody) {
     const validations = Service.sortByOrder(
-      await TransValidation.find({ service: String(service.id), status: "active" })
+      await TransValidation.find({
+        service: String(service.id),
+        status: "active",
+      }),
     );
 
     for (let i = 0; i < validations.length; i += 1) {
@@ -58,7 +61,7 @@ async function runValidation(validation, transBody) {
   throw AppErrorService.create(
     EnvelopeService.CODE.BAD_REQUEST,
     "UNSUPPORTED_VALIDATION_RULE",
-    { validateFunc: validation.validateFunc }
+    { validateFunc: validation.validateFunc },
   );
 }
 
@@ -66,15 +69,21 @@ async function validateReceiverIsNotSender(validation, transBody) {
   if (String(transBody.SENDERID) === String(transBody.RECEIVERID)) {
     throw AppErrorService.create(
       EnvelopeService.CODE.BAD_REQUEST,
-      validation.errorCode || "SELF_TRANSFER"
+      validation.errorCode || "SELF_TRANSFER",
     );
   }
 }
 
 async function validateSenderAccountSufficiency(validation, transBody) {
-  const senderPocket = await Pocket.findOne({ id: transBody.SENDERID, status: "active" });
-  if (!senderPocket) {
-    throw AppErrorService.create(EnvelopeService.CODE.NOT_FOUND, "SENDER_POCKET_NOT_FOUND");
+  const senderPocket = await Pocket.findOne({
+    id: transBody.SENDERID,
+  });
+
+  if (!senderPocket || ["active", "locked"].indexOf(senderPocket.status) === -1) {
+    throw AppErrorService.create(
+      EnvelopeService.CODE.NOT_FOUND,
+      "SENDER_POCKET_NOT_FOUND",
+    );
   }
 
   if (Number(senderPocket.balance) < Number(transBody.TOTALAMOUNT)) {
@@ -84,7 +93,7 @@ async function validateSenderAccountSufficiency(validation, transBody) {
       {
         balance: senderPocket.balance,
         totalAmount: transBody.TOTALAMOUNT,
-      }
+      },
     );
   }
 }

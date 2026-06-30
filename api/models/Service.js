@@ -171,6 +171,66 @@ module.exports = {
     return runAction(service, transBody, "confirm", "confirmUrl");
   },
 
+  runVerifyAction: async function (service, transBody) {
+    return runAction(service, transBody, "verify", "verifyUrl");
+  },
+
+  verifyAuth: function (service, transInput) {
+    const auth = service.auth || {};
+    const method = auth.method || "NONE";
+
+    if (method === "NONE") {
+      return;
+    }
+
+    if (method === "PIN") {
+      const pin = CommonService.cleanString(
+        transInput.body && transInput.body.pin,
+      );
+      const user = transInput.user || {};
+
+      if (
+        transInput.userType !== "customer" ||
+        !CryptoService.verifySecret(pin, user.pinHash)
+      ) {
+        throw AppErrorService.create(
+          EnvelopeService.CODE.UNAUTHORIZED,
+          "INVALID_PIN",
+        );
+      }
+
+      return;
+    }
+
+    throw AppErrorService.create(
+      EnvelopeService.CODE.BAD_REQUEST,
+      "UNSUPPORTED_AUTH_METHOD",
+      { method: method },
+    );
+  },
+
+  buildReceipt: function (receipt, service) {
+    return {
+      transRefId: String(receipt.trail.id),
+      transaction: {
+        id: String(receipt.transaction.id),
+        code: receipt.transaction.code,
+        status: receipt.transaction.status,
+      },
+      service: {
+        id: String(service.id),
+        code: service.code,
+        name: service.name,
+      },
+      amount: receipt.transaction.amount,
+      fee: receipt.transaction.fee,
+      totalAmount: receipt.transaction.totalAmount,
+      message: receipt.transaction.message,
+      currency: receipt.currency.code,
+      status: receipt.trail.status,
+    };
+  },
+
   sortByOrder: function (items) {
     return (items || []).sort(function (a, b) {
       return Number(a.order || 0) - Number(b.order || 0);

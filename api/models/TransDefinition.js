@@ -29,4 +29,20 @@ module.exports = {
       type: "string",
     },
   },
+
+  loadActiveByService: async function (service) {
+    const definition = await TransDefinition.findOne({
+      service: String(service.id),
+      status: "active",
+    });
+
+    if (!definition) {
+      throw AppErrorService.create(
+        EnvelopeService.CODE.NOT_FOUND,
+        "TRANS_DEFINITION_NOT_FOUND"
+      );
+    }
+
+    return definition;
+  },
 };

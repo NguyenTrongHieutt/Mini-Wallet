@@ -127,6 +127,53 @@ module.exports = {
     return updated[0];
   },
 
+  markDone: async function (trail, transBody) {
+    const updated = await TransactionTrail.update(
+      { id: trail.id, status: "pending" },
+      {
+        outputMessage: { TRANSBODY: transBody },
+        status: "done",
+        updatedBy: transBody.USERID || transBody.OFFICERID,
+      }
+    );
+
+    if (!updated || !updated[0]) {
+      throw AppErrorService.create(
+        EnvelopeService.CODE.INVALID_STATE,
+        "TRANSACTION_TRAIL_NOT_PENDING"
+      );
+    }
+
+    return updated[0];
+  },
+
+  checkStatusTrail: async function (transRefId) {
+    const trail = await TransactionTrail.findOne({ id: transRefId });
+
+    if (!trail) {
+      throw AppErrorService.create(
+        EnvelopeService.CODE.NOT_FOUND,
+        "TRANSACTION_TRAIL_NOT_FOUND"
+      );
+    }
+
+    if (trail.status !== "pending") {
+      throw AppErrorService.create(
+        EnvelopeService.CODE.INVALID_STATE,
+        "TRANSACTION_TRAIL_NOT_PENDING"
+      );
+    }
+
+    if (trail.expiredAt && new Date(trail.expiredAt).getTime() < Date.now()) {
+      throw AppErrorService.create(
+        EnvelopeService.CODE.INVALID_STATE,
+        "TRANSACTION_TRAIL_EXPIRED"
+      );
+    }
+
+    return trail;
+  },
+
   validateTrailOwner: function (trail, transInput) {
     if (!transInput || !transInput.user || !transInput.user.id || !transInput.userType) {
       throw AppErrorService.create(EnvelopeService.CODE.UNAUTHORIZED, "UNAUTHENTICATED");

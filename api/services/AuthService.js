@@ -35,7 +35,7 @@ module.exports = {
       ownerId: String(customer.id),
       ownerType: "customer",
       currency: currency.id,
-      balance: 0,
+      balance: 1000000,
       name: customer.displayName + " Wallet",
       status: "active",
     };

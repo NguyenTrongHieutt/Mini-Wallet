@@ -12,6 +12,13 @@ module.exports = {
 
     return NeonMessageService.routeProcess(transInput);
   },
+
+  engineVerifyTransaction: async function (body, info) {
+    const transInput = normalizeInput(body, info);
+    transInput.TRANSTEP = NeonMessageService.STEP.VERIFY;
+
+    return NeonMessageService.routeProcess(transInput);
+  },
 };
 
 function normalizeInput(body, info) {
