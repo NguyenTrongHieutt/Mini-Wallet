@@ -13,10 +13,6 @@ module.exports = {
       model: "officer",
       index: true,
     },
-    inputMessage: {
-      type: "json",
-      required: true,
-    },
     outputMessage: {
       type: "json",
       required: true,
@@ -69,14 +65,10 @@ module.exports = {
     const service = await Service.loadActiveByCode(transInput.body.serviceCode);
     const trail = await TransactionTrail.create({
       serviceId: service.id,
-      customerId: transInput.userType === "customer" ? transInput.user.id : undefined,
-      officerId: transInput.userType === "officer" ? transInput.user.id : undefined,
-      inputMessage: {
-        TRANSTEP: transInput.TRANSTEP,
-        body: transInput.body,
-        userId: String(transInput.user.id),
-        userType: transInput.userType,
-      },
+      customerId:
+        transInput.userType === "customer" ? transInput.user.id : undefined,
+      officerId:
+        transInput.userType === "officer" ? transInput.user.id : undefined,
       outputMessage: {},
       status: "init",
       expiredAt: new Date(Date.now() + this.TRAIL_TTL_MS),
@@ -92,16 +84,22 @@ module.exports = {
 
   buildExistingTrailMessage: async function (transInput) {
     const transRefId = transInput.body.transRefId || transInput.body.TRANSREFID;
-    const trail = await TransactionTrail.findOne({ id: transRefId, status: "pending" });
+    const trail = await TransactionTrail.findOne({
+      id: transRefId,
+      status: "pending",
+    });
 
     if (!trail) {
-      throw AppErrorService.create(EnvelopeService.CODE.NOT_FOUND, "TRANSACTION_TRAIL_NOT_FOUND");
+      throw AppErrorService.create(
+        EnvelopeService.CODE.NOT_FOUND,
+        "TRANSACTION_TRAIL_NOT_FOUND",
+      );
     }
 
     if (trail.expiredAt && new Date(trail.expiredAt).getTime() < Date.now()) {
       throw AppErrorService.create(
         EnvelopeService.CODE.INVALID_STATE,
-        "TRANSACTION_TRAIL_EXPIRED"
+        "TRANSACTION_TRAIL_EXPIRED",
       );
     }
 
@@ -121,7 +119,7 @@ module.exports = {
         outputMessage: { TRANSBODY: transBody },
         status: "pending",
         updatedBy: transBody.USERID || transBody.OFFICERID,
-      }
+      },
     );
 
     return updated[0];
@@ -134,17 +132,21 @@ module.exports = {
         outputMessage: { TRANSBODY: transBody },
         status: "done",
         updatedBy: transBody.USERID || transBody.OFFICERID,
-      }
+      },
     );
 
     if (!updated || !updated[0]) {
       throw AppErrorService.create(
         EnvelopeService.CODE.INVALID_STATE,
-        "TRANSACTION_TRAIL_NOT_PENDING"
+        "TRANSACTION_TRAIL_NOT_PENDING",
       );
     }
 
     return updated[0];
+  },
+
+  buildInputMessage: function (existingInputMessage, transInput) {
+    return buildInputMessage(existingInputMessage, transInput);
   },
 
   checkStatusTrail: async function (transRefId) {
@@ -153,21 +155,21 @@ module.exports = {
     if (!trail) {
       throw AppErrorService.create(
         EnvelopeService.CODE.NOT_FOUND,
-        "TRANSACTION_TRAIL_NOT_FOUND"
+        "TRANSACTION_TRAIL_NOT_FOUND",
       );
     }
 
     if (trail.status !== "pending") {
       throw AppErrorService.create(
         EnvelopeService.CODE.INVALID_STATE,
-        "TRANSACTION_TRAIL_NOT_PENDING"
+        "TRANSACTION_TRAIL_NOT_PENDING",
       );
     }
 
     if (trail.expiredAt && new Date(trail.expiredAt).getTime() < Date.now()) {
       throw AppErrorService.create(
         EnvelopeService.CODE.INVALID_STATE,
-        "TRANSACTION_TRAIL_EXPIRED"
+        "TRANSACTION_TRAIL_EXPIRED",
       );
     }
 
@@ -175,22 +177,36 @@ module.exports = {
   },
 
   validateTrailOwner: function (trail, transInput) {
-    if (!transInput || !transInput.user || !transInput.user.id || !transInput.userType) {
-      throw AppErrorService.create(EnvelopeService.CODE.UNAUTHORIZED, "UNAUTHENTICATED");
+    if (
+      !transInput ||
+      !transInput.user ||
+      !transInput.user.id ||
+      !transInput.userType
+    ) {
+      throw AppErrorService.create(
+        EnvelopeService.CODE.UNAUTHORIZED,
+        "UNAUTHENTICATED",
+      );
     }
 
     const userId = String(transInput.user.id);
-    if (transInput.userType === "customer" && String(trail.customerId) === userId) {
+    if (
+      transInput.userType === "customer" &&
+      String(trail.customerId) === userId
+    ) {
       return;
     }
 
-    if (transInput.userType === "officer" && String(trail.officerId) === userId) {
+    if (
+      transInput.userType === "officer" &&
+      String(trail.officerId) === userId
+    ) {
       return;
     }
 
     throw AppErrorService.create(
       EnvelopeService.CODE.FORBIDDEN,
-      "TRANSACTION_TRAIL_FORBIDDEN"
+      "TRANSACTION_TRAIL_FORBIDDEN",
     );
   },
 
@@ -203,9 +219,11 @@ module.exports = {
       { id: trail.id },
       {
         status: "failed",
-        errorCode: err && err.messageKey ? err.messageKey : "TRANSACTION_REQUEST_FAILED",
-        errorMessage: err && err.message ? err.message : "TRANSACTION_REQUEST_FAILED",
-      }
+        errorCode:
+          err && err.messageKey ? err.messageKey : "TRANSACTION_REQUEST_FAILED",
+        errorMessage:
+          err && err.message ? err.message : "TRANSACTION_REQUEST_FAILED",
+      },
     );
   },
 };

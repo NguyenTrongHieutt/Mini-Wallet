@@ -31,10 +31,11 @@ module.exports = {
     const service = await Service.loadActiveById(message.trail.serviceId);
     const transBody = message.TRANSBODY || {};
     try {
-      const actionResult = await Service.runConfirmAction(service, transBody);
-      const updatedTrail = actionResult
-        ? await TransactionTrail.updatePending(message.trail, transBody)
-        : message.trail;
+      await Service.runConfirmAction(service, transBody);
+      const updatedTrail = await TransactionTrail.updatePending(
+        message.trail,
+        transBody,
+      );
 
       return Service.buildConfirmResult(updatedTrail, service);
     } catch (err) {
