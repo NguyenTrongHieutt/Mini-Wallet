@@ -42,16 +42,26 @@ var MESSAGE = {
   LOGIN_SUCCESS: "Login success",
   LOGOUT_SUCCESS: "Logout success",
   UNAUTHENTICATED: "Unauthenticated",
+
   TRANSACTION_REQUESTED: "Transaction request created",
   TRANSACTION_REQUEST_FAILED: "Transaction request failed",
   TRANSACTION_CONFIRMED: "Transaction confirmed",
   TRANSACTION_CONFIRM_FAILED: "Transaction confirm failed",
   TRANSACTION_VERIFIED: "Transaction verified",
   TRANSACTION_VERIFY_FAILED: "Transaction verify failed",
+
+  CUSTOMER_TRANSACTIONS_LISTED: "Customer transactions listed",
+  CUSTOMER_TRANSACTIONS_LIST_FAILED: "Customer transactions list failed",
+  CUSTOMER_TRANSACTION_DETAIL: "Customer transaction detail",
+  CUSTOMER_TRANSACTION_DETAIL_FAILED: "Customer transaction detail failed",
+
+  TRANSACTION_NOT_FOUND: "Transaction not found",
+  TRANSACTION_IDENTIFIER_REQUIRED: "Transaction identifier is required",
   TRANSACTION_TRAIL_NOT_FOUND: "Transaction trail not found",
   TRANSACTION_TRAIL_EXPIRED: "Transaction trail expired",
   TRANSACTION_TRAIL_FORBIDDEN: "Transaction trail access denied",
   TRANSACTION_TRAIL_NOT_PENDING: "Transaction trail is not pending",
+
   INVALID_PIN: "Invalid PIN",
   UNSUPPORTED_AUTH_METHOD: "Unsupported auth method",
   TRANS_DEFINITION_NOT_FOUND: "Transaction definition not found",

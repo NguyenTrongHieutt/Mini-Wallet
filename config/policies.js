@@ -24,6 +24,10 @@ module.exports.policies = {
     trigger: 'officerAuth'
   },
 
+  CustomerTransactionController: {
+    '*': 'customerAuth'
+  },
+
   OfficerController: {
     '*': 'officerAuth'
   },
