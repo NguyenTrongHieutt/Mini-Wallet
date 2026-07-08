@@ -1,0 +1,7 @@
+.git
+.tmp
+node_modules
+npm-debug.log
+*.log
+config/local.js
+docker-data

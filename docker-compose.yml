@@ -1,0 +1,23 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mini-wallet-app
+    environment:
+      NODE_ENV: development
+      PORT: 1337
+      MONGO_HOST: host.docker.internal
+      MONGO_PORT: 27017
+      MONGO_DATABASE: mini_wallet
+      # Local Mongo must run as a replica set for transaction/session support.
+      MONGO_URI: mongodb://host.docker.internal:27017/mini_wallet?replicaSet=rs0&directConnection=true
+      JWT_SECRET: change-me-in-local-env
+    ports:
+      - "1337:1337"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped

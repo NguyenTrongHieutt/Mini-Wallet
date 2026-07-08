@@ -1,0 +1,902 @@
+openapi: 3.0.3
+info:
+  title: Mini Wallet Customer API
+  version: 1.0.0
+  description: >
+    OpenAPI spec for customer-facing Mini Wallet APIs. All endpoints use POST
+    and return HTTP 200; business status is represented by the `err` field.
+servers:
+  - url: http://localhost:1337
+    description: Local Sails server
+tags:
+  - name: Customer Auth
+  - name: Customer Services
+  - name: Transactions
+  - name: Customer Transaction History
+security:
+  - bearerAuth: []
+paths:
+  /api/v1/customer/auth/register:
+    post:
+      tags: [Customer Auth]
+      summary: Register a customer and create default wallet
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+            example:
+              phone: "0900000001"
+              password: "Password123"
+              pin: "123456"
+              displayName: "Nguyen Van A"
+              currency: "VND"
+      responses:
+        "200":
+          description: Envelope response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/RegisterData"
+  /api/v1/customer/auth/login:
+    post:
+      tags: [Customer Auth]
+      summary: Login customer
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            example:
+              phone: "0900000001"
+              password: "Password123"
+      responses:
+        "200":
+          description: Envelope response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/LoginData"
+  /api/v1/customer/auth/logout:
+    post:
+      tags: [Customer Auth]
+      summary: Logout current customer session
+      responses:
+        "200":
+          $ref: "#/components/responses/EnvelopeResponse"
+
+  /api/v1/customer/services/list:
+    post:
+      tags: [Customer Services]
+      summary: List active services
+      description: Returns public service data only. Does not expose fieldBuilder, auth, actions, or fee.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceListRequest"
+            example:
+              page: 1
+              pageSize: 20
+              q: "transfer"
+              code: "P2P_TRANSFER"
+              sortBy: "name"
+              sortOrder: "ASC"
+      responses:
+        "200":
+          description: Envelope response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ServiceListData"
+  /api/v1/customer/providers/list:
+    post:
+      tags: [Customer Services]
+      summary: List active providers for a service
+      description: Requires serviceCode/codeService and returns public provider data only. URLs are not returned.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProviderListRequest"
+            example:
+              page: 1
+              pageSize: 20
+              codeService: "BILL_PAYMENT"
+              q: "electric"
+              code: "EVN"
+              type: "biller"
+              category: "electricity"
+              sortBy: "name"
+              sortOrder: "ASC"
+      responses:
+        "200":
+          description: Envelope response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ProviderListData"
+  /api/v1/customer/services/input-fields:
+    post:
+      tags: [Customer Services]
+      summary: Get request body fields required by a service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceCodeRequest"
+            example:
+              serviceCode: "P2P_TRANSFER"
+      responses:
+        "200":
+          description: Envelope response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/ServiceInputFieldsData"
+
+  /api/v1/transactions/request:
+    post:
+      tags: [Transactions]
+      summary: Step 1 - Create transaction preview
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionRequestBody"
+            example:
+              serviceCode: "P2P_TRANSFER"
+              receiverPhone: "0900000002"
+              amount: 10000
+              currency: "VND"
+              message: "Dinner"
+      responses:
+        "200":
+          description: Envelope response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TransactionPreview"
+  /api/v1/transactions/confirm:
+    post:
+      tags: [Transactions]
+      summary: Step 2 - Confirm pending transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionConfirmRequest"
+            example:
+              transRefId: "64b000000000000000000001"
+      responses:
+        "200":
+          description: Envelope response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TransactionConfirmData"
+  /api/v1/transactions/verify:
+    post:
+      tags: [Transactions]
+      summary: Step 3 - Verify and execute transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionVerifyRequest"
+            example:
+              transRefId: "64b000000000000000000001"
+              pin: "123456"
+      responses:
+        "200":
+          description: Envelope response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TransactionReceipt"
+
+  /api/v1/customer/transactions/list:
+    post:
+      tags: [Customer Transaction History]
+      summary: List customer transactions
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionHistoryListRequest"
+            example:
+              page: 1
+              pageSize: 10
+              direction: "sent"
+              status: "done"
+              dateFrom: "2026-07-01T00:00:00.000Z"
+              dateTo: "2026-07-31T23:59:59.999Z"
+              amountFrom: 10000
+              amountTo: 500000
+              q: "Dinner"
+              sortBy: "createdAt"
+              sortOrder: "DESC"
+      responses:
+        "200":
+          description: Envelope response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TransactionHistoryListData"
+  /api/v1/customer/transactions/detail:
+    post:
+      tags: [Customer Transaction History]
+      summary: Get transaction receipt detail
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionDetailRequest"
+            examples:
+              byId:
+                value:
+                  id: "64c000000000000000000001"
+              byCode:
+                value:
+                  code: "TXN202607020001"
+              byTransRefId:
+                value:
+                  transRefId: "64b000000000000000000001"
+      responses:
+        "200":
+          description: Envelope response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/TransactionDetailData"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    EnvelopeResponse:
+      description: Envelope response
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Envelope"
+  schemas:
+    Envelope:
+      type: object
+      required: [err, message]
+      properties:
+        err:
+          type: integer
+          example: 200
+          description: Business response code. HTTP status is always 200.
+        message:
+          type: string
+          example: OK
+        data:
+          nullable: true
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        pageSize:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 100
+        totalPages:
+          type: integer
+          example: 5
+    RegisterRequest:
+      type: object
+      required: [phone, password, pin]
+      properties:
+        phone:
+          type: string
+          pattern: "^\\+?[0-9]{9,15}$"
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+        pin:
+          type: string
+          pattern: "^[0-9]{6}$"
+        displayName:
+          type: string
+          minLength: 2
+          maxLength: 60
+        currency:
+          type: string
+          example: VND
+    LoginRequest:
+      type: object
+      required: [phone, password]
+      properties:
+        phone:
+          type: string
+        password:
+          type: string
+    PublicCustomer:
+      type: object
+      properties:
+        id:
+          type: string
+        phone:
+          type: string
+        displayName:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Currency:
+      type: object
+      properties:
+        code:
+          type: string
+          example: VND
+        name:
+          type: string
+        minorUnit:
+          type: integer
+    Pocket:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        balance:
+          type: number
+        currency:
+          oneOf:
+            - $ref: "#/components/schemas/Currency"
+            - type: string
+        status:
+          type: string
+    AuthInfo:
+      type: object
+      properties:
+        expiresAt:
+          type: string
+          format: date-time
+        tokenType:
+          type: string
+          example: Bearer
+    RegisterData:
+      type: object
+      properties:
+        customer:
+          $ref: "#/components/schemas/PublicCustomer"
+        pocket:
+          $ref: "#/components/schemas/Pocket"
+        auth:
+          $ref: "#/components/schemas/AuthInfo"
+    LoginData:
+      type: object
+      properties:
+        customer:
+          $ref: "#/components/schemas/PublicCustomer"
+        auth:
+          $ref: "#/components/schemas/AuthInfo"
+    ServiceListRequest:
+      allOf:
+        - $ref: "#/components/schemas/PagedSearchRequest"
+        - type: object
+          properties:
+            code:
+              type: string
+              example: P2P_TRANSFER
+            serviceCode:
+              type: string
+              example: P2P_TRANSFER
+            sortBy:
+              type: string
+              enum: [code, name, createdAt]
+    PagedSearchRequest:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        pageSize:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+        q:
+          type: string
+        search:
+          type: string
+        keyword:
+          type: string
+        sortOrder:
+          type: string
+          enum: [ASC, DESC]
+        order:
+          type: string
+          enum: [ASC, DESC]
+    PublicService:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          example: active
+    ServiceListData:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicService"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        filters:
+          type: object
+        sort:
+          type: string
+          example: name ASC
+    ProviderListRequest:
+      allOf:
+        - $ref: "#/components/schemas/PagedSearchRequest"
+        - type: object
+          required: [serviceCode]
+          properties:
+            serviceCode:
+              type: string
+              example: BILL_PAYMENT
+            codeService:
+              type: string
+              example: BILL_PAYMENT
+            code:
+              type: string
+              example: EVN
+            providerCode:
+              type: string
+              example: EVN
+            type:
+              type: string
+              example: biller
+            category:
+              type: string
+              example: electricity
+            sortBy:
+              type: string
+              enum: [code, name, category, type, createdAt]
+    PublicProvider:
+      type: object
+      properties:
+        id:
+          type: string
+        serviceCode:
+          type: string
+        type:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+          example: active
+    ProviderListData:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicProvider"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        filters:
+          type: object
+        sort:
+          type: string
+    ServiceCodeRequest:
+      type: object
+      properties:
+        serviceCode:
+          type: string
+        code:
+          type: string
+    InputBodyField:
+      type: object
+      properties:
+        name:
+          type: string
+        transField:
+          type: string
+        role:
+          type: string
+        dataType:
+          type: string
+        required:
+          type: boolean
+        defaultValue: {}
+        validation:
+          type: object
+          nullable: true
+        errorCode:
+          type: string
+    ServiceInputFieldsData:
+      type: object
+      properties:
+        service:
+          $ref: "#/components/schemas/PublicService"
+        endpoint:
+          type: object
+          properties:
+            method:
+              type: string
+              example: POST
+            path:
+              type: string
+              example: /api/v1/transactions/request
+        bodyFields:
+          type: array
+          items:
+            $ref: "#/components/schemas/InputBodyField"
+        requestExample:
+          type: object
+          additionalProperties: true
+    TransactionRequestBody:
+      type: object
+      required: [serviceCode]
+      additionalProperties: true
+      properties:
+        serviceCode:
+          type: string
+        currency:
+          type: string
+          default: VND
+        receiverPhone:
+          type: string
+        amount:
+          type: number
+        message:
+          type: string
+    TransactionPreview:
+      type: object
+      properties:
+        transRefId:
+          type: string
+        service:
+          $ref: "#/components/schemas/PublicService"
+        amount:
+          type: number
+        fee:
+          type: number
+        totalAmount:
+          type: number
+        currency:
+          type: string
+        input:
+          type: object
+          nullable: true
+        status:
+          type: string
+        expiredAt:
+          type: string
+          format: date-time
+    TransactionConfirmRequest:
+      type: object
+      required: [transRefId]
+      additionalProperties: true
+      properties:
+        transRefId:
+          type: string
+    TransactionConfirmData:
+      type: object
+      properties:
+        transRefId:
+          type: string
+        service:
+          $ref: "#/components/schemas/PublicService"
+        authMethod:
+          type: string
+          example: PIN
+        status:
+          type: string
+        expiredAt:
+          type: string
+          format: date-time
+    TransactionVerifyRequest:
+      type: object
+      required: [transRefId]
+      additionalProperties: true
+      properties:
+        transRefId:
+          type: string
+        pin:
+          type: string
+          pattern: "^[0-9]{6}$"
+    TransactionReceipt:
+      type: object
+      properties:
+        transRefId:
+          type: string
+        transaction:
+          type: object
+          properties:
+            id:
+              type: string
+            code:
+              type: string
+            status:
+              type: string
+        service:
+          $ref: "#/components/schemas/PublicService"
+        amount:
+          type: number
+        fee:
+          type: number
+        totalAmount:
+          type: number
+        message:
+          type: string
+        currency:
+          type: string
+        status:
+          type: string
+    TransactionHistoryListRequest:
+      allOf:
+        - $ref: "#/components/schemas/PagedSearchRequest"
+        - type: object
+          properties:
+            direction:
+              type: string
+              enum: [sent, received]
+            type:
+              type: string
+              enum: [sent, received, debit, credit]
+            status:
+              type: string
+            serviceId:
+              type: string
+            serviceCode:
+              type: string
+            amountFrom:
+              type: number
+            amountTo:
+              type: number
+            totalAmountFrom:
+              type: number
+            totalAmountTo:
+              type: number
+            dateFrom:
+              type: string
+              format: date-time
+            dateTo:
+              type: string
+              format: date-time
+            sortBy:
+              type: string
+              enum: [createdAt, amount, totalAmount, status, code]
+    TransactionHistoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        transRefId:
+          type: string
+        direction:
+          type: string
+          enum: [sent, received]
+        amount:
+          type: number
+        fee:
+          type: number
+        totalAmount:
+          type: number
+        currency:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    TransactionHistoryListData:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionHistoryItem"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        filters:
+          type: object
+        sort:
+          type: string
+    TransactionDetailRequest:
+      type: object
+      properties:
+        id:
+          type: string
+        transactionId:
+          type: string
+        code:
+          type: string
+        transRefId:
+          type: string
+    Party:
+      type: object
+      nullable: true
+      properties:
+        type:
+          type: string
+          enum: [customer, provider]
+        phone:
+          type: string
+        displayName:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        status:
+          type: string
+    TransactionDetail:
+      allOf:
+        - $ref: "#/components/schemas/TransactionHistoryItem"
+        - type: object
+          properties:
+            service:
+              $ref: "#/components/schemas/PublicService"
+            sender:
+              $ref: "#/components/schemas/Party"
+            receiver:
+              $ref: "#/components/schemas/Party"
+            currency:
+              $ref: "#/components/schemas/Currency"
+    TransactionTrail:
+      type: object
+      nullable: true
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+        expiredAt:
+          type: string
+          format: date-time
+        outputMessage:
+          type: object
+        errorCode:
+          type: string
+        errorMessage:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    PocketEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        stepOrder:
+          type: integer
+        debitPocketId:
+          type: string
+        creditPocketId:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    TransactionDetailData:
+      type: object
+      properties:
+        transaction:
+          $ref: "#/components/schemas/TransactionDetail"
+        trail:
+          $ref: "#/components/schemas/TransactionTrail"
+        entries:
+          type: array
+          items:
+            $ref: "#/components/schemas/PocketEntry"
