@@ -13,9 +13,11 @@ module.exports = {
     name: {
       type: "string",
       required: true,
+      index: true,
     },
     description: {
       type: "string",
+      index: true,
     },
     fieldBuilder: {
       type: "array",

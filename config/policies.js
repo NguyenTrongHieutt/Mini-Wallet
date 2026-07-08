@@ -28,6 +28,10 @@ module.exports.policies = {
     '*': 'customerAuth'
   },
 
+  CustomerServiceController: {
+    '*': 'customerAuth'
+  },
+
   OfficerController: {
     '*': 'officerAuth'
   },

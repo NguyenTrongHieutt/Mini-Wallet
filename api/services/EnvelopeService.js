@@ -54,6 +54,8 @@ var MESSAGE = {
   CUSTOMER_TRANSACTIONS_LIST_FAILED: "Customer transactions list failed",
   CUSTOMER_TRANSACTION_DETAIL: "Customer transaction detail",
   CUSTOMER_TRANSACTION_DETAIL_FAILED: "Customer transaction detail failed",
+  SERVICE_INPUT_FIELDS: "Service input fields",
+  SERVICE_INPUT_FIELDS_FAILED: "Service input fields failed",
 
   TRANSACTION_NOT_FOUND: "Transaction not found",
   TRANSACTION_IDENTIFIER_REQUIRED: "Transaction identifier is required",
