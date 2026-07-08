@@ -1,4 +1,68 @@
 module.exports = {
+  MAX_PAGE_SIZE: 100,
+
+  listActiveServices: async function (body) {
+    const paging = normalizePaging(body);
+    const criteria = buildServiceCriteria(body);
+    const sort = normalizeSort(body, ["code", "name", "createdAt"], "name");
+
+    const total = await Service.count(criteria);
+    const services = await Service.find(criteria)
+      .sort(sort)
+      .skip(paging.skip)
+      .limit(paging.pageSize);
+
+    return {
+      items: services.map(buildPublicService),
+      pagination: buildPagination(paging, total),
+      filters: {
+        code: body.code || body.serviceCode,
+        q: body.q || body.search || body.keyword,
+      },
+      sort: sort,
+    };
+  },
+
+  listActiveProviders: async function (body) {
+    const paging = normalizePaging(body);
+    const serviceCode = CommonService.cleanUpperString(
+      body.serviceCode || body.codeService || body.SERVICECODE,
+    );
+
+    if (!serviceCode) {
+      throw AppErrorService.create(
+        EnvelopeService.CODE.BAD_REQUEST,
+        "SERVICE_CODE_REQUIRED",
+      );
+    }
+
+    const criteria = buildProviderCriteria(body, serviceCode);
+    const sort = normalizeSort(
+      body,
+      ["code", "name", "category", "type", "createdAt"],
+      "name",
+    );
+
+    const total = await Provider.count(criteria);
+    const providers = await Provider.find(criteria)
+      .sort(sort)
+      .skip(paging.skip)
+      .limit(paging.pageSize);
+
+    return {
+      items: providers.map(buildPublicProvider),
+      pagination: buildPagination(paging, total),
+      filters: {
+        serviceCode: serviceCode,
+        code: body.code || body.providerCode,
+        type: body.type,
+        category: body.category,
+        q: body.q || body.search || body.keyword,
+      },
+      sort: sort,
+    };
+  },
+
   getRequestInputFields: async function (body) {
     const serviceCode = CommonService.cleanUpperString(
       body.serviceCode || body.SERVICECODE || body.code,
@@ -31,6 +95,121 @@ module.exports = {
     };
   },
 };
+
+function buildServiceCriteria(body) {
+  const criteria = {
+    status: "active",
+  };
+  const code = CommonService.cleanUpperString(body.code || body.serviceCode);
+  const search = CommonService.cleanString(
+    body.q || body.search || body.keyword,
+  );
+
+  if (code) {
+    criteria.code = code;
+  }
+
+  if (search) {
+    criteria.or = [
+      { code: { contains: search } },
+      { name: { contains: search } },
+      { description: { contains: search } },
+    ];
+  }
+
+  return criteria;
+}
+
+function buildProviderCriteria(body, serviceCode) {
+  const criteria = {
+    serviceCode: serviceCode,
+    status: "active",
+  };
+  const providerCode = CommonService.cleanUpperString(
+    body.providerCode || body.code,
+  );
+  const type = CommonService.cleanString(body.type);
+  const category = CommonService.cleanString(body.category);
+  const search = CommonService.cleanString(
+    body.q || body.search || body.keyword,
+  );
+
+  if (providerCode) {
+    criteria.code = providerCode;
+  }
+  if (type) {
+    criteria.type = type;
+  }
+  if (category) {
+    criteria.category = category;
+  }
+  if (search) {
+    criteria.or = [
+      { code: { contains: search } },
+      { name: { contains: search } },
+      { category: { contains: search } },
+      { type: { contains: search } },
+    ];
+  }
+
+  return criteria;
+}
+
+function normalizePaging(body) {
+  const page = Math.max(Number(body.page || 1), 1);
+  const requestedPageSize = Number(body.pageSize || body.limit || 20);
+  const pageSize = Math.min(
+    Math.max(requestedPageSize || 20, 1),
+    module.exports.MAX_PAGE_SIZE,
+  );
+
+  return {
+    page: page,
+    pageSize: pageSize,
+    skip: (page - 1) * pageSize,
+  };
+}
+
+function normalizeSort(body, allowed, defaultField) {
+  const sortBy = CommonService.cleanString(body.sortBy || defaultField);
+  const field = allowed.indexOf(sortBy) === -1 ? defaultField : sortBy;
+  const direction = CommonService.cleanString(
+    body.sortOrder || body.order || "ASC",
+  ).toUpperCase();
+
+  return field + " " + (direction === "DESC" ? "DESC" : "ASC");
+}
+
+function buildPagination(paging, total) {
+  return {
+    page: paging.page,
+    pageSize: paging.pageSize,
+    total: total,
+    totalPages: Math.ceil(total / paging.pageSize),
+  };
+}
+
+function buildPublicService(service) {
+  return {
+    id: String(service.id),
+    code: service.code,
+    name: service.name,
+    description: service.description,
+    status: service.status,
+  };
+}
+
+function buildPublicProvider(provider) {
+  return {
+    id: String(provider.id),
+    serviceCode: provider.serviceCode,
+    type: provider.type,
+    code: provider.code,
+    name: provider.name,
+    category: provider.category,
+    status: provider.status,
+  };
+}
 
 async function loadTransFieldMap(service) {
   const fields = await TransField.find({

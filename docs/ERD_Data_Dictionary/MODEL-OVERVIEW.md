@@ -100,6 +100,7 @@ Có thể thống nhất các status cơ bản:
 | ------------ | ---------- | -------- | ----------------------------------------------------------------- |
 | `type`       | String     | Có       | Loại provider, ví dụ `biller`, `telco`, `bank`, `voucher`         |
 | `code`       | String     | Có       | Mã provider, duy nhất theo `type`, ví dụ `EVN`, `WATER_HN`        |
+| `serviceCode` | String   | Có       | Mã service mà provider được phép phục vụ                          |
 | `name`       | String     | Có       | Tên provider hiển thị                                             |
 | `category`   | String     | Không    | Nhóm provider, ví dụ `electricity`, `water`, `internet`, `mobile` |
 | `requestUrl` | String     | Không    | URL gọi ở bước Request; ví dụ URL tra hóa đơn                     |
@@ -116,8 +117,8 @@ Có thể thống nhất các status cơ bản:
 
 ### Index / unique
 
-- Unique index: `type`, `category`, `code`.
-- Index: `status`.
+- Unique gợi ý: `serviceCode`, `type`, `category`, `code`.
+- Index: `serviceCode`, `code`, `status`.
 - Index: `type`.
 - Index: `category`.
 

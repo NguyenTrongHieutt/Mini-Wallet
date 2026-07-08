@@ -8,7 +8,11 @@ module.exports = {
     code: {
       type: "string",
       required: true,
-      unique: true,
+      index: true,
+    },
+    serviceCode: {
+      type: "string",
+      required: true,
       index: true,
     },
     name: {

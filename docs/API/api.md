@@ -54,6 +54,35 @@
 | `POST /api/v1/customer/services/list`  | Xem danh sách service đang active, không trả về fieldBuilder, auth,actions, fee |
 | `POST /api/v1/customer/providers/list` | Xem danh sách provider có status active, không trả về các URL, PocketID         |
 
+Body gợi ý cho `POST /api/v1/customer/services/list`:
+
+```json
+{
+  "page": 1,
+  "pageSize": 20,
+  "q": "transfer",
+  "code": "P2P_TRANSFER",
+  "sortBy": "name",
+  "sortOrder": "ASC"
+}
+```
+
+Body gợi ý cho `POST /api/v1/customer/providers/list`:
+
+```json
+{
+  "page": 1,
+  "pageSize": 20,
+  "serviceCode": "BILL_PAYMENT",
+  "q": "electric",
+  "code": "EVN",
+  "type": "biller",
+  "category": "electricity",
+  "sortBy": "name",
+  "sortOrder": "ASC"
+}
+```
+
 ### 2.4. Giao dịch
 
 | API                                 | Mục đích                   |

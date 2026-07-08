@@ -368,6 +368,7 @@ async function runAction(service, transBody, actionName, defaultUrlField) {
   }
 
   const provider = await loadActionProvider(
+    service,
     service.actions.provider,
     transBody,
   );
@@ -394,7 +395,7 @@ async function runAction(service, transBody, actionName, defaultUrlField) {
   };
 }
 
-async function loadActionProvider(providerConfig, transBody) {
+async function loadActionProvider(service, providerConfig, transBody) {
   const providerCode = resolveProviderCode(providerConfig, transBody);
   if (!providerCode) {
     throw AppErrorService.create(
@@ -403,15 +404,17 @@ async function loadActionProvider(providerConfig, transBody) {
     );
   }
 
+  const serviceCode = CommonService.cleanUpperString(service.code);
   const provider = await Provider.findOne({
     code: providerCode,
+    serviceCode: serviceCode,
     status: "active",
   });
   if (!provider) {
     throw AppErrorService.create(
       EnvelopeService.CODE.NOT_FOUND,
       "PROVIDER_NOT_FOUND",
-      { providerCode: providerCode },
+      { providerCode: providerCode, serviceCode: serviceCode },
     );
   }
 

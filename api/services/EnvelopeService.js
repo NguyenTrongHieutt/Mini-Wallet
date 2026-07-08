@@ -54,6 +54,10 @@ var MESSAGE = {
   CUSTOMER_TRANSACTIONS_LIST_FAILED: "Customer transactions list failed",
   CUSTOMER_TRANSACTION_DETAIL: "Customer transaction detail",
   CUSTOMER_TRANSACTION_DETAIL_FAILED: "Customer transaction detail failed",
+  CUSTOMER_SERVICES_LISTED: "Customer services listed",
+  CUSTOMER_SERVICES_LIST_FAILED: "Customer services list failed",
+  CUSTOMER_PROVIDERS_LISTED: "Customer providers listed",
+  CUSTOMER_PROVIDERS_LIST_FAILED: "Customer providers list failed",
   SERVICE_INPUT_FIELDS: "Service input fields",
   SERVICE_INPUT_FIELDS_FAILED: "Service input fields failed",
 

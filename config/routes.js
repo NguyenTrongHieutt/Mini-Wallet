@@ -5,6 +5,8 @@ module.exports.routes = {
   "POST /api/v1/transactions/request": "TransactionController.request",
   "POST /api/v1/transactions/confirm": "TransactionController.confirm",
   "POST /api/v1/transactions/verify": "TransactionController.verify",
+  "POST /api/v1/customer/services/list": "CustomerServiceController.list",
+  "POST /api/v1/customer/providers/list": "CustomerServiceController.providers",
   "POST /api/v1/customer/services/input-fields": "CustomerServiceController.inputFields",
   "POST /api/v1/customer/transactions/list": "CustomerTransactionController.list",
   "POST /api/v1/customer/transactions/detail": "CustomerTransactionController.detail",
