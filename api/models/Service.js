@@ -92,7 +92,20 @@ module.exports = {
       TRANSREFID: String(trail.id),
       SERVICEID: String(service.id),
       SERVICECODE: service.code,
+      USERTYPE: transInput.userType,
     };
+
+    if (transInput.user && transInput.user.id) {
+      if (transInput.userType === "customer") {
+        transBody.USERID = String(transInput.user.id);
+      } else if (transInput.userType === "officer") {
+        transBody.OFFICERID = String(transInput.user.id);
+      }
+
+      if (transInput.user.role) {
+        transBody.USERROLE = transInput.user.role;
+      }
+    }
 
     const fieldBuilder = this.sortByOrder(service.fieldBuilder || []);
     for (let i = 0; i < fieldBuilder.length; i += 1) {
