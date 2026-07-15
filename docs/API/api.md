@@ -155,15 +155,21 @@ Hướng dẫn chạy trực tiếp và request Postman:
 | `POST /api/v1/officer/services/update`                   | Cập nhật thông tin cơ bản của Service |
 | `POST /api/v1/officer/services/trans-fields/list`        | Xem danh sách TransField              |
 | `POST /api/v1/officer/services/trans-validations/list`   | Xem danh sách TransValidation         |
-| `POST /api/v1/officer/services/detail`                   | Xem thông tin cơ bản Service          |
 | `POST /api/v1/officer/services/trans-fields/update`      | Cập nhật `TransField`                 |
 | `POST /api/v1/officer/services/trans-validations/update` | Cập nhật `TransValidation`            |
 | `POST /api/v1/officer/services/field-builder/update`     | Cập nhật `fieldBuilder`               |
+| `POST /api/v1/officer/services/actions/update`           | Cập nhật cấu hình `actions`            |
 | `POST /api/v1/officer/services/trans-fields/insert`      | Thêm `TransField`                     |
 | `POST /api/v1/officer/services/trans-validations/insert` | Thêm `TransValidation`                |
+| `POST /api/v1/officer/services/trans-definition/detail`  | Xem `TransDefinition` của Service     |
 | `POST /api/v1/officer/services/trans-definition/update`  | Cập nhật `TransDefinition`            |
 | `POST /api/v1/officer/services/publish`                  | Bật Service                           |
 | `POST /api/v1/officer/services/unpublish`                | Tắt Service                           |
+
+Hướng dẫn chạy trực tiếp và request Postman:
+
+- [Test API service/config không dùng Docker](./service-config-management-postman.md)
+- [Postman collection service/config](./service-config-management.postman_collection.json)
 
 ### 3.6. Trigger giao dịch
 

@@ -48,6 +48,10 @@ module.exports.policies = {
     '*': 'officerAuth'
   },
 
+  OfficerServiceController: {
+    '*': 'officerAuth'
+  },
+
   ConfigController: {
     '*': 'officerAuth'
   },

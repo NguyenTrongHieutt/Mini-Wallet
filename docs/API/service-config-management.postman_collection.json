@@ -1,0 +1,211 @@
+{
+  "info": {
+    "_postman_id": "899aecf4-3b72-4d50-90ac-bd094590f12c",
+    "name": "Mini Wallet - Service Config Management",
+    "description": "Login và test tuần tự toàn bộ API quản lý service/config. Chạy trực tiếp với MongoDB local, không cần Docker.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{officerAccessToken}}", "type": "string" }
+    ]
+  },
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "var json = pm.response.json();",
+          "pm.test('HTTP status is 200', function () { pm.response.to.have.status(200); });",
+          "pm.test('Business response succeeds', function () { pm.expect(json.err).to.eql(200); });",
+          "if (json.err === 200 && json.data) {",
+          "  if (pm.info.requestName === '01 - Login officer' && json.data.auth) pm.collectionVariables.set('officerAccessToken', json.data.auth.accessToken);",
+          "  if (pm.info.requestName === '02 - Create draft service' && json.data.service) pm.collectionVariables.set('serviceId', json.data.service.id);",
+          "  if (pm.info.requestName === '07 - Insert TransField' && json.data.transField) pm.collectionVariables.set('transFieldId', json.data.transField.id);",
+          "  if (pm.info.requestName === '10 - Insert TransValidation' && json.data.transValidation) pm.collectionVariables.set('transValidationId', json.data.transValidation.id);",
+          "}",
+          "if (pm.info.requestName === '02 - Create draft service') pm.test('Service starts as draft', function () { pm.expect(json.data.service.status).to.eql('draft'); });",
+          "if (pm.info.requestName === '16 - Publish service') pm.test('Service is active', function () { pm.expect(json.data.service.status).to.eql('active'); });",
+          "if (pm.info.requestName === '17 - Unpublish service') pm.test('Service is inactive', function () { pm.expect(json.data.service.status).to.eql('inactive'); });"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Login officer",
+      "request": {
+        "auth": { "type": "noauth" },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"phone\": \"{{officerPhone}}\",\n  \"password\": \"{{officerPassword}}\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/auth/login"
+      }
+    },
+    {
+      "name": "02 - Create draft service",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": ["pm.collectionVariables.set('serviceCode', 'POSTMAN_SERVICE_' + Date.now());"]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceCode\": \"{{serviceCode}}\",\n  \"name\": \"Postman Transfer Service\",\n  \"description\": \"Service created by Postman\",\n  \"fee\": { \"type\": \"fixed\", \"value\": 100 },\n  \"auth\": { \"method\": \"NONE\" }\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/create"
+      }
+    },
+    {
+      "name": "03 - List services",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"page\": 1,\n  \"pageSize\": 20,\n  \"serviceCode\": \"{{serviceCode}}\",\n  \"status\": \"draft\",\n  \"sortBy\": \"createdAt\",\n  \"sortOrder\": \"DESC\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/list"
+      }
+    },
+    {
+      "name": "04 - Service detail",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/detail"
+      }
+    },
+    {
+      "name": "05 - Update basic service info",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"name\": \"Postman Transfer Service Updated\",\n  \"description\": \"Updated before publishing\",\n  \"fee\": { \"type\": \"fixed\", \"value\": 100 },\n  \"auth\": { \"method\": \"NONE\" },\n  \"actions\": {}\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/update"
+      }
+    },
+    {
+      "name": "06 - Update fieldBuilder",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"fieldBuilder\": [\n    {\n      \"order\": 1,\n      \"name\": \"AMOUNT\",\n      \"role\": \"transaction amount\",\n      \"rule\": \"mapping\",\n      \"source\": \"body\",\n      \"variable\": \"amount\",\n      \"datatype\": \"number\",\n      \"errorCode\": \"AMOUNT_REQUIRED\"\n    },\n    {\n      \"order\": 2,\n      \"name\": \"SENDERID\",\n      \"role\": \"sender pocket id\",\n      \"rule\": \"mapping\",\n      \"source\": \"body\",\n      \"variable\": \"senderPocketId\",\n      \"datatype\": \"string\",\n      \"errorCode\": \"SENDER_POCKET_NOT_FOUND\"\n    },\n    {\n      \"order\": 3,\n      \"name\": \"RECEIVERID\",\n      \"role\": \"receiver pocket id\",\n      \"rule\": \"mapping\",\n      \"source\": \"body\",\n      \"variable\": \"receiverPocketId\",\n      \"datatype\": \"string\",\n      \"errorCode\": \"RECEIVER_POCKET_NOT_FOUND\"\n    }\n  ]\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/field-builder/update"
+      }
+    },
+    {
+      "name": "07 - Insert TransField",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"fieldName\": \"AMOUNT\",\n  \"fieldFormat\": \"number\",\n  \"minLength\": 1,\n  \"maxLength\": 1000000,\n  \"isRequired\": true,\n  \"needSecured\": false,\n  \"order\": 1,\n  \"errorCode\": \"AMOUNT_INVALID\",\n  \"status\": \"active\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/trans-fields/insert"
+      }
+    },
+    {
+      "name": "08 - List TransFields",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"status\": \"active\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/trans-fields/list"
+      }
+    },
+    {
+      "name": "09 - Update TransField",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"transFieldId\": \"{{transFieldId}}\",\n  \"maxLength\": 2000000,\n  \"errorCode\": \"AMOUNT_INVALID\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/trans-fields/update"
+      }
+    },
+    {
+      "name": "10 - Insert TransValidation",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"validateFunc\": \"validateReceiverIsNotSender\",\n  \"validateFields\": \"SENDERID:RECEIVERID\",\n  \"order\": 1,\n  \"errorCode\": \"SELF_TRANSFER\",\n  \"status\": \"active\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/trans-validations/insert"
+      }
+    },
+    {
+      "name": "11 - List TransValidations",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"status\": \"active\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/trans-validations/list"
+      }
+    },
+    {
+      "name": "12 - Update TransValidation",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"transValidationId\": \"{{transValidationId}}\",\n  \"order\": 2,\n  \"errorCode\": \"SELF_TRANSFER\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/trans-validations/update"
+      }
+    },
+    {
+      "name": "13 - Update actions",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"actions\": {\n    \"provider\": {\n      \"codeSource\": \"TRANSBODY\",\n      \"codeField\": \"PROVIDERCODE\"\n    },\n    \"request\": { \"enabled\": false },\n    \"confirm\": { \"enabled\": false },\n    \"verify\": { \"enabled\": false }\n  }\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/actions/update"
+      }
+    },
+    {
+      "name": "14 - Update TransDefinition",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\",\n  \"glSteps\": [\n    {\n      \"order\": 1,\n      \"amount\": \"AMOUNT\",\n      \"debit\": { \"level\": \"productLevel\", \"target\": \"SENDERID\" },\n      \"credit\": { \"level\": \"productLevel\", \"target\": \"RECEIVERID\" }\n    }\n  ],\n  \"status\": \"active\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/trans-definition/update"
+      }
+    },
+    {
+      "name": "15 - TransDefinition detail",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/trans-definition/detail"
+      }
+    },
+    {
+      "name": "16 - Publish service",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/publish"
+      }
+    },
+    {
+      "name": "17 - Unpublish service",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"serviceId\": \"{{serviceId}}\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/services/unpublish"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:1337", "type": "string" },
+    { "key": "officerPhone", "value": "0900000000", "type": "string" },
+    { "key": "officerPassword", "value": "Officer123", "type": "string" },
+    { "key": "officerAccessToken", "value": "", "type": "string" },
+    { "key": "serviceCode", "value": "", "type": "string" },
+    { "key": "serviceId", "value": "", "type": "string" },
+    { "key": "transFieldId", "value": "", "type": "string" },
+    { "key": "transValidationId", "value": "", "type": "string" }
+  ]
+}

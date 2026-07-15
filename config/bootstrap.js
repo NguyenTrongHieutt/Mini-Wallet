@@ -19,6 +19,12 @@ module.exports.bootstrap = function bootstrap(cb) {
         { keys: { service: 1, fieldName: 1 }, options: { unique: true } },
       ],
     },
+    {
+      model: TransDefinition,
+      indexes: [
+        { keys: { service: 1 }, options: { unique: true } },
+      ],
+    },
   ];
 
   runIndexJobs(indexJobs, cb);

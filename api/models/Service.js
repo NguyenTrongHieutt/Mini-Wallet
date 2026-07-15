@@ -21,7 +21,7 @@ module.exports = {
     },
     fieldBuilder: {
       type: "array",
-      required: true,
+      defaultsTo: [],
     },
     actions: {
       type: "json",
