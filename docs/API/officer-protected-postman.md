@@ -1,15 +1,30 @@
-# Test Officer Protected APIs bằng Postman
+# Test Officer Protected APIs bằng Postman (không dùng Docker)
 
-## Chuẩn bị dữ liệu
+## 1. Chạy MongoDB và ứng dụng trực tiếp trên máy
 
-Khởi động MongoDB và ứng dụng, sau đó seed currency và tài khoản officer:
+Dự án dùng Sails 0.12 và driver MongoDB cũ, vì vậy nên dùng MongoDB Community
+4.4. MongoDB phải đang lắng nghe tại `127.0.0.1:27017`.
+
+Nếu MongoDB đã được cài dưới dạng Windows Service, mở PowerShell với quyền
+Administrator và chạy:
 
 ```powershell
-docker compose up -d mongo
+Get-Service MongoDB
+Start-Service MongoDB
+```
+
+Trong thư mục dự án, cài dependency và tạo dữ liệu nền:
+
+```powershell
+npm install
+$env:MONGO_URI="mongodb://127.0.0.1:27017/mini_wallet"
 npm run seed:currencies
 npm run seed:officer
 npm start
 ```
+
+Giữ cửa sổ `npm start` đang chạy. API mặc định ở
+`http://localhost:1337`. Luồng API quản lý ví không yêu cầu MongoDB replica set.
 
 Tài khoản officer mặc định:
 
@@ -18,24 +33,28 @@ phone: 0900000000
 password: Officer123
 ```
 
-Có thể đổi tài khoản seed bằng biến môi trường `OFFICER_PHONE`,
-`OFFICER_PASSWORD`, `OFFICER_DISPLAY_NAME`.
+Có thể đổi tài khoản seed bằng các biến `OFFICER_PHONE`, `OFFICER_PASSWORD` và
+`OFFICER_DISPLAY_NAME` trước khi chạy `npm run seed:officer`.
 
-Import file `docs/API/officer-protected.postman_collection.json` vào Postman.
-Collection tự lưu `accessToken` sau request login. Chạy các request theo thứ tự từ
-trên xuống. Sau request list, collection tự lấy customer đầu tiên làm
-`customerId`; cũng có thể nhập thủ công biến này trong collection.
+## 2. Import collection Postman
 
-## Request mẫu
+Import file `docs/API/officer-protected.postman_collection.json` vào Postman,
+sau đó chạy request theo thứ tự từ trên xuống. Request đăng nhập tự lưu
+`officerAccessToken`; request tạo/list ví tự lưu `pocketId` cho các request sau.
 
-Tất cả protected API dùng header:
+Mọi protected API dùng:
 
 ```text
 Authorization: Bearer {{officerAccessToken}}
 Content-Type: application/json
 ```
 
-### Login officer
+Dự án luôn trả HTTP status 200. Cần kiểm tra `err === 200` trong JSON để xác
+định request thành công.
+
+## 3. Request quản lý ví
+
+### Đăng nhập officer
 
 `POST {{baseUrl}}/api/v1/officer/auth/login`
 
@@ -45,6 +64,98 @@ Content-Type: application/json
   "password": "{{officerPassword}}"
 }
 ```
+
+### Tạo ví System/Bank
+
+`POST {{baseUrl}}/api/v1/officer/pockets/create`
+
+```json
+{
+  "ownerType": "system",
+  "ownerId": "POSTMAN_SYSTEM",
+  "name": "Postman System Wallet",
+  "currency": "VND",
+  "balance": 5000000
+}
+```
+
+`ownerType` chỉ nhận `system` hoặc `bank`. `currency` mặc định là `VND` nếu
+không truyền. `balance` phải là số nguyên không âm và mặc định là `0` nếu không
+truyền. Mỗi bộ `ownerType + ownerId + currency` là duy nhất.
+
+Ví dụ tạo ví Bank:
+
+```json
+{
+  "ownerType": "bank",
+  "ownerId": "VCB_SETTLEMENT",
+  "name": "VCB Settlement Wallet",
+  "currency": "VND",
+  "balance": 10000000
+}
+```
+
+### Danh sách ví
+
+`POST {{baseUrl}}/api/v1/officer/pockets/list`
+
+```json
+{
+  "page": 1,
+  "pageSize": 20,
+  "q": "POSTMAN_SYSTEM",
+  "ownerType": "system",
+  "status": "active",
+  "currency": "VND",
+  "sortBy": "createdAt",
+  "sortOrder": "DESC"
+}
+```
+
+Các filter đều có thể bỏ trống. `q` tìm theo `name` hoặc `ownerId`;
+`ownerType` nhận `customer`, `provider`, `system`, `bank`; `status` nhận
+`active`, `locked`. `pageSize` tối đa 100.
+
+### Chi tiết ví
+
+`POST {{baseUrl}}/api/v1/officer/pockets/detail`
+
+```json
+{
+  "pocketId": "{{pocketId}}"
+}
+```
+
+### Khóa ví
+
+`POST {{baseUrl}}/api/v1/officer/pockets/lock`
+
+```json
+{
+  "pocketId": "{{pocketId}}"
+}
+```
+
+Gọi lại khi ví đã được officer khóa vẫn thành công với `changed: false`. Nếu ví
+đang bị transaction engine khóa tạm thời, API trả `err: 422` và không can thiệp
+vào giao dịch.
+
+### Mở khóa ví
+
+`POST {{baseUrl}}/api/v1/officer/pockets/unlock`
+
+```json
+{
+  "pocketId": "{{pocketId}}"
+}
+```
+
+Gọi lại khi ví đã active vẫn thành công với `changed: false`. Endpoint chỉ mở
+khóa do officer tạo, không mở khóa tạm thời của transaction engine.
+
+## 4. Các request officer/customer có sẵn
+
+Collection vẫn bao gồm các request quản lý officer và customer trước đó.
 
 ### Profile officer
 
@@ -69,12 +180,17 @@ Content-Type: application/json
 }
 ```
 
-`status` nhận `active`, `locked` hoặc bỏ trống. `sortBy` nhận `phone`,
-`displayName`, `status`, `createdAt`, `updatedAt`.
+### Chi tiết, khóa và mở khóa customer
 
-### Chi tiết customer
+Các endpoint tương ứng:
 
-`POST {{baseUrl}}/api/v1/officer/customers/detail`
+```text
+POST {{baseUrl}}/api/v1/officer/customers/detail
+POST {{baseUrl}}/api/v1/officer/customers/lock
+POST {{baseUrl}}/api/v1/officer/customers/unlock
+```
+
+Body:
 
 ```json
 {
@@ -82,31 +198,9 @@ Content-Type: application/json
 }
 ```
 
-Có thể dùng `phone` thay cho `customerId`.
+Khi khóa customer, mọi session active của customer bị revoke ngay.
 
-### Khóa customer
-
-`POST {{baseUrl}}/api/v1/officer/customers/lock`
-
-```json
-{
-  "customerId": "{{customerId}}"
-}
-```
-
-Khi khóa, mọi session đang active của customer bị revoke ngay.
-
-### Mở khóa customer
-
-`POST {{baseUrl}}/api/v1/officer/customers/unlock`
-
-```json
-{
-  "customerId": "{{customerId}}"
-}
-```
-
-### Logout officer
+### Đăng xuất officer
 
 `POST {{baseUrl}}/api/v1/officer/auth/logout`
 
@@ -114,5 +208,29 @@ Khi khóa, mọi session đang active của customer bị revoke ngay.
 {}
 ```
 
-Lưu ý: dự án luôn trả HTTP 200; kiểm tra `err === 200` để xác định request thành
-công.
+## 5. Response mẫu
+
+Tạo ví thành công:
+
+```json
+{
+  "err": 200,
+  "message": "Pocket created",
+  "data": {
+    "pocket": {
+      "id": "...",
+      "ownerType": "system",
+      "ownerId": "POSTMAN_SYSTEM",
+      "name": "Postman System Wallet",
+      "balance": 5000000,
+      "currency": {
+        "code": "VND",
+        "name": "Vietnamese Dong",
+        "minorUnit": 0
+      },
+      "status": "active",
+      "lock": null
+    }
+  }
+}
+```

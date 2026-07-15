@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "c4552f43-4f53-4e5d-a385-7c9273420546",
     "name": "Mini Wallet - Officer Protected APIs",
-    "description": "Requests test profile officer và quản lý customer. Chạy theo thứ tự từ trên xuống.",
+    "description": "Requests test profile officer, quản lý customer và quản lý pocket. Chạy theo thứ tự từ trên xuống.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -221,6 +221,200 @@
       }
     },
     {
+      "name": "Create system pocket",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('Pocket is created or already exists', function () { pm.expect([200, 409]).to.include(json.err); });",
+              "if (json.err === 200 && json.data && json.data.pocket) {",
+              "  pm.collectionVariables.set('pocketId', json.data.pocket.id);",
+              "} else if (json.err === 409 && json.data && json.data.pocketId) {",
+              "  pm.collectionVariables.set('pocketId', json.data.pocketId);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{officerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ownerType\": \"system\",\n  \"ownerId\": \"{{pocketOwnerId}}\",\n  \"name\": \"Postman System Wallet\",\n  \"currency\": \"VND\",\n  \"balance\": 5000000\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/pockets/create"
+      }
+    },
+    {
+      "name": "List pockets",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('Pocket list succeeds', function () { pm.expect(json.err).to.eql(200); });",
+              "if (json.err === 200 && json.data && json.data.items) {",
+              "  var pocket = json.data.items.find(function (item) { return item.ownerId === pm.collectionVariables.get('pocketOwnerId'); });",
+              "  if (pocket) { pm.collectionVariables.set('pocketId', pocket.id); }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{officerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"page\": 1,\n  \"pageSize\": 20,\n  \"q\": \"{{pocketOwnerId}}\",\n  \"ownerType\": \"system\",\n  \"status\": \"\",\n  \"currency\": \"VND\",\n  \"sortBy\": \"createdAt\",\n  \"sortOrder\": \"DESC\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/pockets/list"
+      }
+    },
+    {
+      "name": "Pocket detail",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{officerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pocketId\": \"{{pocketId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/pockets/detail"
+      }
+    },
+    {
+      "name": "Lock pocket",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('Pocket lock succeeds', function () { pm.expect(json.err).to.eql(200); });",
+              "pm.test('Pocket is locked', function () { pm.expect(json.data.pocket.status).to.eql('locked'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{officerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pocketId\": \"{{pocketId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/pockets/lock"
+      }
+    },
+    {
+      "name": "Unlock pocket",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('Pocket unlock succeeds', function () { pm.expect(json.err).to.eql(200); });",
+              "pm.test('Pocket is active', function () { pm.expect(json.data.pocket.status).to.eql('active'); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{officerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"pocketId\": \"{{pocketId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/pockets/unlock"
+      }
+    },
+    {
       "name": "Logout officer",
       "request": {
         "auth": {
@@ -271,6 +465,14 @@
     },
     {
       "key": "customerId",
+      "value": ""
+    },
+    {
+      "key": "pocketOwnerId",
+      "value": "POSTMAN_SYSTEM"
+    },
+    {
+      "key": "pocketId",
       "value": ""
     }
   ]

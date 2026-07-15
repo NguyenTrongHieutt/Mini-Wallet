@@ -40,6 +40,10 @@ module.exports.policies = {
     '*': 'officerAuth'
   },
 
+  OfficerPocketController: {
+    '*': 'officerAuth'
+  },
+
   ConfigController: {
     '*': 'officerAuth'
   },

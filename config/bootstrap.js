@@ -5,6 +5,15 @@
 module.exports.bootstrap = function bootstrap(cb) {
   var indexJobs = [
     {
+      model: Pocket,
+      indexes: [
+        {
+          keys: { ownerType: 1, ownerId: 1, currency: 1 },
+          options: { unique: true },
+        },
+      ],
+    },
+    {
       model: TransField,
       indexes: [
         { keys: { service: 1, fieldName: 1 }, options: { unique: true } },
