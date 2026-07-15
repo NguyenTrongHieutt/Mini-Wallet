@@ -279,7 +279,7 @@ module.exports = {
         "FIELD_BUILDER_REQUIRED",
       );
     }
-    const fieldBuilder = normalizeFieldBuilder(body.fieldBuilder, true);
+    const fieldBuilder = normalizeFieldBuilder(body.fieldBuilder, false);
     const updates = {
       fieldBuilder: fieldBuilder,
       updatedBy: String(officer.id),
@@ -343,7 +343,7 @@ module.exports = {
     body = asObject(body);
     const service = await loadService(body);
     assertConfigEditable(service);
-    const glSteps = normalizeGlSteps(body.glSteps, true);
+    const glSteps = normalizeGlSteps(body.glSteps, false);
     const status = normalizeChildStatus(body.status, "active");
     const existing = await TransDefinition.findOne({
       service: String(service.id),
@@ -693,7 +693,7 @@ function normalizeFieldBuilder(value, required) {
     result.push(field);
   }
 
-  return Service.sortByOrder(result);
+  return normalizeSequentialOrder(result);
 }
 
 function fieldBuilderError(index) {
@@ -963,7 +963,15 @@ function normalizeGlSteps(value, required) {
     orders[step.order] = true;
     result.push(step);
   }
-  return Service.sortByOrder(result);
+  return normalizeSequentialOrder(result);
+}
+
+function normalizeSequentialOrder(items) {
+  const sorted = Service.sortByOrder(items);
+  for (let i = 0; i < sorted.length; i += 1) {
+    sorted[i].order = i + 1;
+  }
+  return sorted;
 }
 
 function normalizeLedgerTarget(value, index) {
