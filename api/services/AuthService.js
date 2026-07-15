@@ -51,6 +51,7 @@ module.exports = {
         customer: this.publicUser(customer),
         pocket: this.publicPocket(pocket, currency),
         auth: {
+          accessToken: auth.token,
           expiresAt: auth.expiredAt,
           tokenType: "Bearer",
         },
@@ -73,7 +74,7 @@ module.exports = {
 
     const user = await model.findOne({ phone: body.phone });
     const secret = body.password;
-    const hash = user && userType === "customer" ? user.passwordHash : null;
+    const hash = user ? user.passwordHash : null;
 
     if (
       !user ||
@@ -91,6 +92,7 @@ module.exports = {
 
     const data = {
       auth: {
+        accessToken: auth.token,
         expiresAt: auth.expiredAt,
         tokenType: "Bearer",
       },

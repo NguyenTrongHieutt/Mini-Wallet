@@ -120,6 +120,18 @@ var MESSAGE = {
   AUTHENTICATION_FAILED: "Authentication failed",
   CUSTOMER_PERMISSION_REQUIRED: "Customer permission required",
   OFFICER_PERMISSION_REQUIRED: "Officer permission required",
+  OFFICER_PROFILE: "Officer profile",
+  OFFICER_CUSTOMERS_LISTED: "Officer customers listed",
+  OFFICER_CUSTOMERS_LIST_FAILED: "Officer customers list failed",
+  OFFICER_CUSTOMER_DETAIL: "Officer customer detail",
+  OFFICER_CUSTOMER_DETAIL_FAILED: "Officer customer detail failed",
+  CUSTOMER_IDENTIFIER_REQUIRED: "Customer id or phone is required",
+  CUSTOMER_NOT_FOUND: "Customer not found",
+  CUSTOMER_STATUS_INVALID: "Customer status must be active or locked",
+  CUSTOMER_LOCKED: "Customer locked",
+  CUSTOMER_LOCK_FAILED: "Customer lock failed",
+  CUSTOMER_UNLOCKED: "Customer unlocked",
+  CUSTOMER_UNLOCK_FAILED: "Customer unlock failed",
 };
 
 module.exports = {

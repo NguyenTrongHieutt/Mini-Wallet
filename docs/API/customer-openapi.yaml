@@ -427,6 +427,9 @@ components:
     AuthInfo:
       type: object
       properties:
+        accessToken:
+          type: string
+          description: JWT dùng trong header Authorization Bearer
         expiresAt:
           type: string
           format: date-time

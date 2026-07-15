@@ -18,7 +18,7 @@ npm start
 The default MongoDB connection is:
 
 ```txt
-host: localhost
+host: 127.0.0.1
 port: 27017
 database: mini_wallet
 ```
@@ -26,7 +26,44 @@ database: mini_wallet
 You can override it with:
 
 ```bash
-MONGO_HOST=localhost MONGO_PORT=27017 MONGO_DATABASE=mini_wallet npm start
+MONGO_HOST=127.0.0.1 MONGO_PORT=27017 MONGO_DATABASE=mini_wallet npm start
+```
+
+Or with a MongoDB URI:
+
+```bash
+MONGO_URI=mongodb://127.0.0.1:27017/mini_wallet npm start
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:MONGO_URI="mongodb://127.0.0.1:27017/mini_wallet"; npm start
+```
+
+## Docker Development
+
+The app requires MongoDB to be running before Sails can lift. The included
+Docker Compose setup starts MongoDB 4.4 as a single-node replica set and then
+starts the Sails app:
+
+```bash
+docker compose up --build
+```
+
+To start only MongoDB and run Sails on your host machine:
+
+```bash
+docker compose up -d mongo
+npm start
+```
+
+If you use ledger transaction flows from the host, point the MongoDB driver at
+the replica set:
+
+```powershell
+$env:MONGO_URI="mongodb://127.0.0.1:27017/mini_wallet?replicaSet=rs0"
+npm start
 ```
 
 ## Compatibility Note

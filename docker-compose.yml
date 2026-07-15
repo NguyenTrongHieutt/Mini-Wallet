@@ -1,23 +1,43 @@
 services:
+  mongo:
+    image: mongo:4.4
+    container_name: mini-wallet-mongo
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+      - ./docker/mongo/init-replica.js:/docker-entrypoint-initdb.d/init-replica.js:ro
+    healthcheck:
+      test: ["CMD", "mongo", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: mini-wallet-app
+    depends_on:
+      mongo:
+        condition: service_healthy
     environment:
       NODE_ENV: development
       PORT: 1337
-      MONGO_HOST: host.docker.internal
+      MONGO_HOST: mongo
       MONGO_PORT: 27017
       MONGO_DATABASE: mini_wallet
-      # Local Mongo must run as a replica set for transaction/session support.
-      MONGO_URI: mongodb://host.docker.internal:27017/mini_wallet?replicaSet=rs0&directConnection=true
+      MONGO_URI: mongodb://mongo:27017/mini_wallet?replicaSet=rs0
       JWT_SECRET: change-me-in-local-env
     ports:
       - "1337:1337"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     volumes:
       - .:/app
       - /app/node_modules
     restart: unless-stopped
+
+volumes:
+  mongo-data:

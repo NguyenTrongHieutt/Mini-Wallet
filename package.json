@@ -29,6 +29,7 @@
   "scripts": {
     "debug": "node debug app.js",
     "seed:currencies": "node scripts/seed-currencies.js",
+    "seed:officer": "node scripts/seed-officer.js",
     "seed:p2p": "node scripts/seed-p2p-service.js",
     "start": "node app.js"
   },

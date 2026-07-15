@@ -48,7 +48,7 @@ function getMongoUri() {
     sails.config &&
     sails.config.connections &&
     sails.config.connections.mongo;
-  const host = process.env.MONGO_HOST || (connection && connection.host) || "localhost";
+  const host = process.env.MONGO_HOST || (connection && connection.host) || "127.0.0.1";
   const port = process.env.MONGO_PORT || (connection && connection.port) || 27017;
   const database = getMongoDatabase();
 

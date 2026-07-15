@@ -1,0 +1,277 @@
+{
+  "info": {
+    "_postman_id": "c4552f43-4f53-4e5d-a385-7c9273420546",
+    "name": "Mini Wallet - Officer Protected APIs",
+    "description": "Requests test profile officer và quản lý customer. Chạy theo thứ tự từ trên xuống.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Setup - Register test customer",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('Customer registered or already exists', function () { pm.expect([200, 409]).to.include(json.err); });",
+              "if (json.err === 200 && json.data && json.data.customer) {",
+              "  pm.collectionVariables.set('customerId', json.data.customer.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"{{customerPhone}}\",\n  \"password\": \"Customer123\",\n  \"pin\": \"123456\",\n  \"displayName\": \"Postman Customer\",\n  \"currency\": \"VND\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/customer/auth/register"
+      }
+    },
+    {
+      "name": "Login officer",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('Officer login succeeds', function () { pm.expect(json.err).to.eql(200); });",
+              "if (json.err === 200 && json.data && json.data.auth) {",
+              "  pm.collectionVariables.set('officerAccessToken', json.data.auth.accessToken);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"{{officerPhone}}\",\n  \"password\": \"{{officerPassword}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/auth/login"
+      }
+    },
+    {
+      "name": "Officer profile",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{officerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/me"
+      }
+    },
+    {
+      "name": "List customers",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('Customer list succeeds', function () { pm.expect(json.err).to.eql(200); });",
+              "if (json.err === 200 && json.data && json.data.items && json.data.items.length) {",
+              "  pm.collectionVariables.set('customerId', json.data.items[0].id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{officerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"page\": 1,\n  \"pageSize\": 20,\n  \"q\": \"\",\n  \"status\": \"\",\n  \"sortBy\": \"createdAt\",\n  \"sortOrder\": \"DESC\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/customers/list"
+      }
+    },
+    {
+      "name": "Customer detail",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{officerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customerId\": \"{{customerId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/customers/detail"
+      }
+    },
+    {
+      "name": "Lock customer",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{officerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customerId\": \"{{customerId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/customers/lock"
+      }
+    },
+    {
+      "name": "Unlock customer",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{officerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"customerId\": \"{{customerId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/customers/unlock"
+      }
+    },
+    {
+      "name": "Logout officer",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{officerAccessToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/auth/logout"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:1337"
+    },
+    {
+      "key": "officerPhone",
+      "value": "0900000000"
+    },
+    {
+      "key": "officerPassword",
+      "value": "Officer123"
+    },
+    {
+      "key": "officerAccessToken",
+      "value": ""
+    },
+    {
+      "key": "customerPhone",
+      "value": "0912345678"
+    },
+    {
+      "key": "customerId",
+      "value": ""
+    }
+  ]
+}
