@@ -195,8 +195,8 @@ Hướng dẫn chạy trực tiếp và request Postman:
 
 | API                                        | Mục đích                  |
 | ------------------------------------------ | ------------------------- |
-| `POST /api/v1/officer/ledger/entries/list` | Xem danh sách PocketEntry |
-| `POST /api/v1/officer/ledger/reconcile`    | Đối soát ledger           |
+| `POST /api/v1/officer/ledger/entries/list`   | Xem danh sách PocketEntry |
+| `POST /api/v1/officer/ledger/entries/detail` | Xem chi tiết PocketEntry  |
 
 ---
 
@@ -209,6 +209,11 @@ Hướng dẫn chạy trực tiếp và request Postman:
 | `POST /api/v1/mock/biller/bills/create` | Tạo bill mẫu      |
 | `POST /api/v1/mock/biller/inquiry`      | Mock inquiry bill |
 | `POST /api/v1/mock/biller/payment`      | Mock payment bill |
+
+Hướng dẫn chạy local và request Postman cho các API từ mục 3.6 đến 4.1:
+
+- [Test không dùng Docker](./transaction-ledger-mock-postman.md)
+- [Postman collection](./transaction-ledger-mock.postman_collection.json)
 
 ### 4.2. Dev seed
 

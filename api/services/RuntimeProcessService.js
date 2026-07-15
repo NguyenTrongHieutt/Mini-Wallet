@@ -296,16 +296,16 @@ module.exports = {
           };
         });
       } catch (err) {
-        const message = err && err.message ? err.message : "";
+        const transactionErrorMessage = err && err.message ? err.message : "";
         if (
-          message.indexOf("Transaction numbers are only allowed") !== -1 ||
-          message.indexOf("replica set member or mongos") !== -1 ||
-          message.indexOf("Transaction") !== -1
+          transactionErrorMessage.indexOf("Transaction numbers are only allowed") !== -1 ||
+          transactionErrorMessage.indexOf("replica set member or mongos") !== -1 ||
+          transactionErrorMessage.indexOf("Transaction") !== -1
         ) {
           throw AppErrorService.create(
             EnvelopeService.CODE.INVALID_STATE,
             "MONGO_TRANSACTION_UNAVAILABLE",
-            { message: message },
+            { message: transactionErrorMessage },
           );
         }
         await TransactionTrail.markFailed(message.trail, err);

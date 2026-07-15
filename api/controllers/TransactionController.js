@@ -25,4 +25,16 @@ module.exports = {
       return EnvelopeService.handleError(res, err, "TRANSACTION_VERIFY_FAILED");
     }
   },
+
+  trigger: async function (req, res) {
+    try {
+      const data = await TransactionOrchestratorService.trigger(
+        req.body || {},
+        req.info,
+      );
+      return res.ok(EnvelopeService.CODE.OK, "TRANSACTION_TRIGGERED", data);
+    } catch (err) {
+      return EnvelopeService.handleError(res, err, "TRANSACTION_TRIGGER_FAILED");
+    }
+  },
 };

@@ -52,12 +52,24 @@ module.exports.policies = {
     '*': 'officerAuth'
   },
 
+  OfficerTrailController: {
+    '*': 'officerAuth'
+  },
+
+  OfficerTransactionController: {
+    '*': 'officerAuth'
+  },
+
+  OfficerLedgerController: {
+    '*': 'officerAuth'
+  },
+
   ConfigController: {
     '*': 'officerAuth'
   },
 
   MockBillerController: {
-    '*': true
+    '*': 'devOnly'
   },
 
   DevController: {

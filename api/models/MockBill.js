@@ -10,6 +10,12 @@ module.exports = {
       required: true,
       index: true
     },
+    identityKey: {
+      type: 'string',
+      required: true,
+      unique: true,
+      index: true
+    },
     amount: {
       type: 'integer',
       required: true
@@ -26,6 +32,9 @@ module.exports = {
     },
     paidTransRefId: {
       type: 'string'
+    },
+    paidAt: {
+      type: 'datetime'
     }
   }
 };

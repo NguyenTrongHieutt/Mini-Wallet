@@ -52,8 +52,11 @@ module.exports = {
       pagination: paginationResult(paging, total),
       filters: {
         q: CommonService.cleanString(body.q || body.search || body.keyword),
-        code: CommonService.cleanUpperString(body.serviceCode || body.code) || undefined,
-        status: CommonService.cleanString(body.status).toLowerCase() || undefined,
+        code:
+          CommonService.cleanUpperString(body.serviceCode || body.code) ||
+          undefined,
+        status:
+          CommonService.cleanString(body.status).toLowerCase() || undefined,
       },
       sort: sort,
     };
@@ -77,7 +80,9 @@ module.exports = {
 
     const rows = await Service.update({ id: service.id }, updates);
     return {
-      service: serializeService(requireUpdated(rows, "OFFICER_SERVICE_UPDATE_FAILED")),
+      service: serializeService(
+        requireUpdated(rows, "OFFICER_SERVICE_UPDATE_FAILED"),
+      ),
       changed: true,
     };
   },
@@ -88,7 +93,10 @@ module.exports = {
     const status = normalizeChildStatusFilter(body.status);
     const criteria = { service: String(service.id) };
     if (status) criteria.status = status;
-    const items = await TransField.find(criteria).sort({ order: 1, createdAt: 1 });
+    const items = await TransField.find(criteria).sort({
+      order: 1,
+      createdAt: 1,
+    });
 
     return {
       service: serviceSummary(service),
@@ -175,7 +183,9 @@ module.exports = {
       throw err;
     }
     return {
-      transField: serializeTransField(requireUpdated(rows, "TRANS_FIELD_UPDATE_FAILED")),
+      transField: serializeTransField(
+        requireUpdated(rows, "TRANS_FIELD_UPDATE_FAILED"),
+      ),
       changed: true,
     };
   },
@@ -186,7 +196,10 @@ module.exports = {
     const status = normalizeChildStatusFilter(body.status);
     const criteria = { service: String(service.id) };
     if (status) criteria.status = status;
-    const items = await TransValidation.find(criteria).sort({ order: 1, createdAt: 1 });
+    const items = await TransValidation.find(criteria).sort({
+      order: 1,
+      createdAt: 1,
+    });
 
     return {
       service: serviceSummary(service),
@@ -278,7 +291,9 @@ module.exports = {
 
     const rows = await Service.update({ id: service.id }, updates);
     return {
-      service: serializeService(requireUpdated(rows, "FIELD_BUILDER_UPDATE_FAILED")),
+      service: serializeService(
+        requireUpdated(rows, "FIELD_BUILDER_UPDATE_FAILED"),
+      ),
       changed: true,
     };
   },
@@ -330,7 +345,9 @@ module.exports = {
     assertConfigEditable(service);
     const glSteps = normalizeGlSteps(body.glSteps, true);
     const status = normalizeChildStatus(body.status, "active");
-    const existing = await TransDefinition.findOne({ service: String(service.id) });
+    const existing = await TransDefinition.findOne({
+      service: String(service.id),
+    });
     const values = {
       code: String(service.id),
       service: String(service.id),
@@ -442,7 +459,8 @@ function normalizeServiceUpdate(body, service) {
       if (allowed[i] === "description") {
         updates.description = normalizeDescription(body.description);
       }
-      if (allowed[i] === "actions") updates.actions = normalizeActions(body.actions);
+      if (allowed[i] === "actions")
+        updates.actions = normalizeActions(body.actions);
       if (allowed[i] === "fee") updates.fee = normalizeFee(body.fee);
       if (allowed[i] === "auth") updates.auth = normalizeAuth(body.auth);
     }
@@ -454,7 +472,9 @@ function normalizeServiceUpdate(body, service) {
     );
   }
 
-  normalizeServiceName(updates.name === undefined ? service.name : updates.name);
+  normalizeServiceName(
+    updates.name === undefined ? service.name : updates.name,
+  );
   return updates;
 }
 
@@ -520,13 +540,7 @@ function buildActionsUpdate(body, currentActions) {
   }
 
   const actionName = CommonService.cleanString(body.actionName).toLowerCase();
-  const supportedActions = [
-    "provider",
-    "request",
-    "confirm",
-    "verify",
-    "preview",
-  ];
+  const supportedActions = ["provider", "request", "confirm", "verify"];
   if (!actionName || supportedActions.indexOf(actionName) === -1) {
     throw AppErrorService.create(
       EnvelopeService.CODE.BAD_REQUEST,
@@ -635,7 +649,8 @@ function normalizeFieldBuilder(value, required) {
       !field.role ||
       ["fixed", "mapping", "query"].indexOf(field.rule) === -1 ||
       !field.source ||
-      ["string", "number", "boolean", "object"].indexOf(field.datatype) === -1 ||
+      ["string", "number", "boolean", "object"].indexOf(field.datatype) ===
+        -1 ||
       !field.errorCode ||
       names[field.name] ||
       orders[field.order]
@@ -661,13 +676,16 @@ function normalizeFieldBuilder(value, required) {
       field.query = CommonService.cleanString(field.query);
       if (
         field.source !== "database" ||
-        !/^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/.test(field.query) ||
+        !/^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/.test(
+          field.query,
+        ) ||
         SAFE_FIELD_BUILDER_QUERIES.indexOf(field.query) === -1 ||
         !validQueryParams(field.params)
       ) {
         throw fieldBuilderError(i);
       }
-      if (field.output !== undefined) field.output = CommonService.cleanString(field.output);
+      if (field.output !== undefined)
+        field.output = CommonService.cleanString(field.output);
     }
 
     names[field.name] = true;
@@ -716,15 +734,25 @@ function normalizeTransField(body) {
     fieldName: CommonService.cleanUpperString(body.fieldName),
     fieldFormat: CommonService.cleanString(body.fieldFormat).toLowerCase(),
     isRequired: normalizeBoolean(body.isRequired, false, "TRANS_FIELD_INVALID"),
-    needSecured: normalizeBoolean(body.needSecured, false, "TRANS_FIELD_INVALID"),
+    needSecured: normalizeBoolean(
+      body.needSecured,
+      false,
+      "TRANS_FIELD_INVALID",
+    ),
     order: normalizePositiveInteger(body.order, "TRANS_FIELD_INVALID"),
     status: normalizeChildStatus(body.status, "active"),
   };
   if (body.minLength !== undefined && body.minLength !== null) {
-    field.minLength = normalizeNonNegativeInteger(body.minLength, "TRANS_FIELD_INVALID");
+    field.minLength = normalizeNonNegativeInteger(
+      body.minLength,
+      "TRANS_FIELD_INVALID",
+    );
   }
   if (body.maxLength !== undefined && body.maxLength !== null) {
-    field.maxLength = normalizeNonNegativeInteger(body.maxLength, "TRANS_FIELD_INVALID");
+    field.maxLength = normalizeNonNegativeInteger(
+      body.maxLength,
+      "TRANS_FIELD_INVALID",
+    );
   }
   field.regex = CommonService.cleanString(body.regex) || undefined;
   field.errorCode = CommonService.cleanUpperString(body.errorCode) || undefined;
@@ -734,8 +762,16 @@ function normalizeTransField(body) {
 
 function normalizeTransFieldUpdate(body, existing) {
   const editable = [
-    "fieldName", "fieldFormat", "minLength", "maxLength", "regex",
-    "isRequired", "needSecured", "order", "errorCode", "status",
+    "fieldName",
+    "fieldFormat",
+    "minLength",
+    "maxLength",
+    "regex",
+    "isRequired",
+    "needSecured",
+    "order",
+    "errorCode",
+    "status",
   ];
   const merged = {};
   let supplied = false;
@@ -757,8 +793,12 @@ function normalizeTransFieldUpdate(body, existing) {
   for (let j = 0; j < editable.length; j += 1) {
     if (Object.prototype.hasOwnProperty.call(body, editable[j])) {
       updates[editable[j]] = normalized[editable[j]];
-      if (["minLength", "maxLength", "regex", "errorCode"].indexOf(editable[j]) !== -1 &&
-          normalized[editable[j]] === undefined) {
+      if (
+        ["minLength", "maxLength", "regex", "errorCode"].indexOf(
+          editable[j],
+        ) !== -1 &&
+        normalized[editable[j]] === undefined
+      ) {
         updates[editable[j]] = null;
       }
     }
@@ -768,18 +808,34 @@ function normalizeTransFieldUpdate(body, existing) {
 
 function validateTransField(field) {
   const formats = [
-    "string", "number", "boolean", "object", "phone", "text", "integer",
-    "int", "float", "decimal", "bool", "array", "json",
+    "string",
+    "number",
+    "boolean",
+    "object",
+    "phone",
+    "text",
+    "integer",
+    "int",
+    "float",
+    "decimal",
+    "bool",
+    "array",
+    "json",
   ];
-  if (!/^[A-Z][A-Z0-9_]{0,99}$/.test(field.fieldName) ||
-      formats.indexOf(field.fieldFormat) === -1) {
+  if (
+    !/^[A-Z][A-Z0-9_]{0,99}$/.test(field.fieldName) ||
+    formats.indexOf(field.fieldFormat) === -1
+  ) {
     throw AppErrorService.create(
       EnvelopeService.CODE.BAD_REQUEST,
       "TRANS_FIELD_INVALID",
     );
   }
-  if (field.minLength !== undefined && field.maxLength !== undefined &&
-      field.minLength > field.maxLength) {
+  if (
+    field.minLength !== undefined &&
+    field.maxLength !== undefined &&
+    field.minLength > field.maxLength
+  ) {
     throw AppErrorService.create(
       EnvelopeService.CODE.BAD_REQUEST,
       "TRANS_FIELD_INVALID",
@@ -810,7 +866,13 @@ function normalizeTransValidation(body) {
 }
 
 function normalizeTransValidationUpdate(body, existing) {
-  const editable = ["validateFunc", "validateFields", "order", "errorCode", "status"];
+  const editable = [
+    "validateFunc",
+    "validateFields",
+    "order",
+    "errorCode",
+    "status",
+  ];
   const merged = {};
   let supplied = false;
   for (let i = 0; i < editable.length; i += 1) {
@@ -849,7 +911,10 @@ function validateTransValidation(validation) {
     "checkRole",
     "checkUserRole",
   ];
-  if (supported.indexOf(validation.validateFunc) === -1 || !validation.validateFields) {
+  if (
+    supported.indexOf(validation.validateFunc) === -1 ||
+    !validation.validateFields
+  ) {
     throw AppErrorService.create(
       EnvelopeService.CODE.BAD_REQUEST,
       "TRANS_VALIDATION_INVALID",
@@ -858,7 +923,8 @@ function validateTransValidation(validation) {
   if (validation.validateFields.charAt(0) === "{") {
     try {
       const config = JSON.parse(validation.validateFields);
-      if (!CommonService.isPlainObject(config)) throw new Error("object required");
+      if (!CommonService.isPlainObject(config))
+        throw new Error("object required");
     } catch (err) {
       throw AppErrorService.create(
         EnvelopeService.CODE.BAD_REQUEST,
@@ -886,8 +952,12 @@ function normalizeGlSteps(value, required) {
       debit: normalizeLedgerTarget(raw.debit, i),
       credit: normalizeLedgerTarget(raw.credit, i),
     };
-    if (!Number.isSafeInteger(step.order) || step.order < 1 ||
-        !/^[A-Z][A-Z0-9_]{0,99}$/.test(step.amount) || orders[step.order]) {
+    if (
+      !Number.isSafeInteger(step.order) ||
+      step.order < 1 ||
+      !/^[A-Z][A-Z0-9_]{0,99}$/.test(step.amount) ||
+      orders[step.order]
+    ) {
       throw transDefinitionError(i);
     }
     orders[step.order] = true;
@@ -983,12 +1053,19 @@ async function validatePublishable(service) {
 
 function buildAvailableFieldMap(fieldBuilder) {
   const builtInFields = [
-    "TRANSREFID", "SERVICEID", "SERVICECODE", "USERTYPE", "USERID",
-    "OFFICERID", "USERROLE",
+    "TRANSREFID",
+    "SERVICEID",
+    "SERVICECODE",
+    "USERTYPE",
+    "USERID",
+    "OFFICERID",
+    "USERROLE",
   ];
   const result = {};
-  for (let i = 0; i < builtInFields.length; i += 1) result[builtInFields[i]] = true;
-  for (let j = 0; j < fieldBuilder.length; j += 1) result[fieldBuilder[j].name] = true;
+  for (let i = 0; i < builtInFields.length; i += 1)
+    result[builtInFields[i]] = true;
+  for (let j = 0; j < fieldBuilder.length; j += 1)
+    result[fieldBuilder[j].name] = true;
   return result;
 }
 
@@ -1005,7 +1082,9 @@ function validateDefinitionTargetField(target, availableFields, step) {
 async function loadService(body) {
   body = asObject(body);
   const serviceId = CommonService.cleanString(body.serviceId);
-  const serviceCode = CommonService.cleanUpperString(body.serviceCode || body.code);
+  const serviceCode = CommonService.cleanUpperString(
+    body.serviceCode || body.code,
+  );
   if (!serviceId && !serviceCode) {
     throw AppErrorService.create(
       EnvelopeService.CODE.BAD_REQUEST,
@@ -1032,7 +1111,10 @@ async function loadTransField(body, service) {
       "TRANS_FIELD_IDENTIFIER_REQUIRED",
     );
   }
-  const field = await TransField.findOne({ id: id, service: String(service.id) });
+  const field = await TransField.findOne({
+    id: id,
+    service: String(service.id),
+  });
   if (!field) {
     throw AppErrorService.create(
       EnvelopeService.CODE.NOT_FOUND,
@@ -1090,7 +1172,9 @@ function buildServiceCriteria(body) {
   const criteria = {};
   const code = CommonService.cleanUpperString(body.serviceCode || body.code);
   const status = CommonService.cleanString(body.status).toLowerCase();
-  const search = CommonService.cleanString(body.q || body.search || body.keyword);
+  const search = CommonService.cleanString(
+    body.q || body.search || body.keyword,
+  );
   if (status && ["draft", "active", "inactive"].indexOf(status) === -1) {
     throw AppErrorService.create(
       EnvelopeService.CODE.BAD_REQUEST,
@@ -1116,17 +1200,20 @@ function normalizePaging(body) {
     ? Math.max(Math.floor(requestedPage), 1)
     : 1;
   const pageSize = Number.isFinite(requestedPageSize)
-    ? Math.min(Math.max(Math.floor(requestedPageSize), 1), module.exports.MAX_PAGE_SIZE)
+    ? Math.min(
+        Math.max(Math.floor(requestedPageSize), 1),
+        module.exports.MAX_PAGE_SIZE,
+      )
     : 20;
   return { page: page, pageSize: pageSize, skip: (page - 1) * pageSize };
 }
 
 function normalizeServiceSort(body) {
   const allowed = ["code", "name", "status", "createdAt", "updatedAt"];
-  const sortBy = allowed.indexOf(body.sortBy) === -1 ? "createdAt" : body.sortBy;
-  const direction = CommonService.cleanUpperString(body.sortOrder, "DESC") === "ASC"
-    ? 1
-    : -1;
+  const sortBy =
+    allowed.indexOf(body.sortBy) === -1 ? "createdAt" : body.sortBy;
+  const direction =
+    CommonService.cleanUpperString(body.sortOrder, "DESC") === "ASC" ? 1 : -1;
   const sort = {};
   sort[sortBy] = direction;
   return sort;
@@ -1199,7 +1286,12 @@ function serializeService(service) {
 }
 
 function serviceSummary(service) {
-  return { id: String(service.id), code: service.code, name: service.name, status: service.status };
+  return {
+    id: String(service.id),
+    code: service.code,
+    name: service.name,
+    status: service.status,
+  };
 }
 
 function serializeTransField(field) {
@@ -1274,7 +1366,8 @@ function hasChanged(source, updates, ignored) {
   const keys = Object.keys(updates);
   for (let i = 0; i < keys.length; i += 1) {
     if (ignoredKeys.indexOf(keys[i]) !== -1) continue;
-    if (JSON.stringify(source[keys[i]]) !== JSON.stringify(updates[keys[i]])) return true;
+    if (JSON.stringify(source[keys[i]]) !== JSON.stringify(updates[keys[i]]))
+      return true;
   }
   return false;
 }
@@ -1286,7 +1379,9 @@ function cloneJson(value) {
 function isDuplicateKeyError(err) {
   return !!(
     err &&
-    (err.code === 11000 || err.code === 11001 ||
-      (err.originalError && [11000, 11001].indexOf(err.originalError.code) !== -1))
+    (err.code === 11000 ||
+      err.code === 11001 ||
+      (err.originalError &&
+        [11000, 11001].indexOf(err.originalError.code) !== -1))
   );
 }

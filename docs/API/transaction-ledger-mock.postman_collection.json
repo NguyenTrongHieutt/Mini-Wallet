@@ -1,0 +1,215 @@
+{
+  "info": {
+    "_postman_id": "8a70b8f7-b45c-48c4-a67c-6bf29e894a34",
+    "name": "Mini Wallet - Transaction Trail Ledger Mock Biller",
+    "description": "End-to-end requests for APIs 3.6-3.9 and 4.1. Run in order against a local app and MongoDB replica set.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('customerPhone')) {",
+          "  pm.collectionVariables.set('customerPhone', '09' + String(Date.now()).slice(-8));",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Register test customer",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Customer is ready', () => pm.expect([200, 409]).to.include(json.err));",
+              "if (json.err === 200 && json.data.customer) pm.collectionVariables.set('customerId', json.data.customer.id);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"{{customerPhone}}\",\n  \"password\": \"Customer123\",\n  \"pin\": \"123456\",\n  \"displayName\": \"Postman Cash-in Customer\",\n  \"currency\": \"VND\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/customer/auth/register"
+      }
+    },
+    {
+      "name": "02 - Login officer",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Officer login succeeds', () => pm.expect(json.err).to.eql(200));",
+              "if (json.err === 200) pm.collectionVariables.set('officerAccessToken', json.data.auth.accessToken);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"{{officerPhone}}\",\n  \"password\": \"{{officerPassword}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/auth/login"
+      }
+    },
+    {
+      "name": "03 - Trigger CASH_IN",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const json = pm.response.json();",
+              "pm.test('Cash-in succeeds', () => pm.expect(json.err).to.eql(200));",
+              "if (json.err === 200) {",
+              "  pm.collectionVariables.set('transRefId', json.data.transRefId);",
+              "  pm.collectionVariables.set('transactionId', json.data.receipt.transaction.id);",
+              "  pm.collectionVariables.set('transactionCode', json.data.receipt.transaction.code);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerAccessToken}}", "type": "string" }] },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"serviceCode\": \"CASH_IN\",\n  \"customerPhone\": \"{{customerPhone}}\",\n  \"amount\": 50000,\n  \"currency\": \"VND\",\n  \"message\": \"Postman local cash-in\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/transactions/trigger"
+      }
+    },
+    {
+      "name": "04 - List trails",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const json = pm.response.json();", "pm.test('Trails listed', () => pm.expect(json.err).to.eql(200));"] } }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerAccessToken}}", "type": "string" }] },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"page\": 1,\n  \"pageSize\": 20,\n  \"serviceCode\": \"CASH_IN\",\n  \"sortBy\": \"createdAt\",\n  \"sortOrder\": \"DESC\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/trails/list"
+      }
+    },
+    {
+      "name": "05 - Trail detail",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const json = pm.response.json();", "pm.test('Trail detail returned', () => { pm.expect(json.err).to.eql(200); pm.expect(json.data.trail.id).to.eql(pm.collectionVariables.get('transRefId')); });"] } }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerAccessToken}}", "type": "string" }] },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"transRefId\": \"{{transRefId}}\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/trails/detail"
+      }
+    },
+    {
+      "name": "06 - List transactions",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const json = pm.response.json();", "pm.test('Transactions listed', () => pm.expect(json.err).to.eql(200));"] } }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerAccessToken}}", "type": "string" }] },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"page\": 1,\n  \"pageSize\": 20,\n  \"serviceCode\": \"CASH_IN\",\n  \"status\": \"done\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/transactions/list"
+      }
+    },
+    {
+      "name": "07 - Transaction detail",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const json = pm.response.json();", "pm.test('Transaction detail returned', () => { pm.expect(json.err).to.eql(200); pm.expect(json.data.transaction.id).to.eql(pm.collectionVariables.get('transactionId')); });"] } }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerAccessToken}}", "type": "string" }] },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"transactionId\": \"{{transactionId}}\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/transactions/detail"
+      }
+    },
+    {
+      "name": "08 - List ledger entries",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const json = pm.response.json();", "pm.test('Ledger entries returned', () => { pm.expect(json.err).to.eql(200); pm.expect(json.data.items.length).to.be.above(0); });", "if (json.err === 200 && json.data.items.length) pm.collectionVariables.set('entryId', json.data.items[0].id);"] } }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerAccessToken}}", "type": "string" }] },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"transRefId\": \"{{transRefId}}\",\n  \"page\": 1,\n  \"pageSize\": 20\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/ledger/entries/list"
+      }
+    },
+    {
+      "name": "09 - Ledger entry detail",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const json = pm.response.json();", "pm.test('Ledger entry detail returned', () => { pm.expect(json.err).to.eql(200); pm.expect(json.data.entry.id).to.eql(pm.collectionVariables.get('entryId')); });"] } }],
+      "request": {
+        "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{officerAccessToken}}", "type": "string" }] },
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"entryId\": \"{{entryId}}\"\n}" },
+        "url": "{{baseUrl}}/api/v1/officer/ledger/entries/detail"
+      }
+    },
+    {
+      "name": "10 - Create mock bill",
+      "event": [
+        { "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('billCode', 'BILL' + Date.now());"] } },
+        { "listen": "test", "script": { "type": "text/javascript", "exec": ["const json = pm.response.json();", "pm.test('Mock bill created', () => pm.expect(json.err).to.eql(200));"] } }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"providerCode\": \"EVN\",\n  \"billCode\": \"{{billCode}}\",\n  \"amount\": 125000,\n  \"billInfo\": {\n    \"customerName\": \"Postman Test\",\n    \"period\": \"2026-07\"\n  }\n}" },
+        "url": "{{baseUrl}}/api/v1/mock/biller/bills/create"
+      }
+    },
+    {
+      "name": "11 - Mock bill inquiry",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const json = pm.response.json();", "pm.test('Unpaid bill returned', () => { pm.expect(json.err).to.eql(200); pm.expect(json.data.status).to.eql('unpaid'); });"] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"providerCode\": \"EVN\",\n  \"billCode\": \"{{billCode}}\"\n}" },
+        "url": "{{baseUrl}}/api/v1/mock/biller/inquiry"
+      }
+    },
+    {
+      "name": "12 - Mock bill payment",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["const json = pm.response.json();", "pm.test('Bill paid', () => { pm.expect(json.err).to.eql(200); pm.expect(json.data.status).to.eql('paid'); });"] } }],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"providerCode\": \"EVN\",\n  \"billCode\": \"{{billCode}}\",\n  \"amount\": 125000,\n  \"transRefId\": \"{{transRefId}}\"\n}" },
+        "url": "{{baseUrl}}/api/v1/mock/biller/payment"
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:1337" },
+    { "key": "officerPhone", "value": "0900000000" },
+    { "key": "officerPassword", "value": "Officer123" },
+    { "key": "customerPhone", "value": "" },
+    { "key": "customerId", "value": "" },
+    { "key": "officerAccessToken", "value": "" },
+    { "key": "transRefId", "value": "" },
+    { "key": "transactionId", "value": "" },
+    { "key": "transactionCode", "value": "" },
+    { "key": "entryId", "value": "" },
+    { "key": "billCode", "value": "" }
+  ]
+}
