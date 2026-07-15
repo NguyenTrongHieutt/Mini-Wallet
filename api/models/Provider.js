@@ -46,5 +46,13 @@ module.exports = {
     updatedBy: {
       type: "string",
     },
+    pocketId: {
+      model: "pocket",
+    },
+    identityKey: {
+      type: "string",
+      unique: true,
+      index: true,
+    },
   },
 };

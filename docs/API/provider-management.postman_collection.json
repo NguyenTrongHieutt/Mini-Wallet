@@ -1,0 +1,303 @@
+{
+  "info": {
+    "_postman_id": "62dc7a97-b004-44ea-9d2a-6a0a1025ef2c",
+    "name": "Mini Wallet - Provider Management",
+    "description": "Login và test đủ 6 API quản lý provider. Chạy theo thứ tự từ trên xuống, không cần Docker.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{officerAccessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 - Login officer",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('HTTP status is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Officer login succeeds', function () { pm.expect(json.err).to.eql(200); });",
+              "if (json.err === 200 && json.data && json.data.auth) {",
+              "  pm.collectionVariables.set('officerAccessToken', json.data.auth.accessToken);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"phone\": \"{{officerPhone}}\",\n  \"password\": \"{{officerPassword}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/auth/login"
+      }
+    },
+    {
+      "name": "02 - Create provider and pocket",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('providerCode', 'POSTMAN_' + Date.now());"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('Provider and pocket are created', function () {",
+              "  pm.expect(json.err).to.eql(200);",
+              "  pm.expect(json.data.provider.status).to.eql('active');",
+              "  pm.expect(json.data.provider.pocket.ownerType).to.eql('provider');",
+              "});",
+              "if (json.err === 200 && json.data && json.data.provider) {",
+              "  pm.collectionVariables.set('providerId', json.data.provider.id);",
+              "  pm.collectionVariables.set('pocketId', json.data.provider.pocketId);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"type\": \"biller\",\n  \"providerCode\": \"{{providerCode}}\",\n  \"serviceCode\": \"{{serviceCode}}\",\n  \"name\": \"Postman Electricity Provider\",\n  \"category\": \"electricity\",\n  \"requestUrl\": \"{{baseUrl}}/api/v1/mock/biller/inquiry\",\n  \"confirmUrl\": \"\",\n  \"verifyUrl\": \"{{baseUrl}}/api/v1/mock/biller/payment\",\n  \"currency\": \"VND\",\n  \"balance\": 0,\n  \"pocketName\": \"Postman Provider Wallet\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/providers/create"
+      }
+    },
+    {
+      "name": "03 - List providers",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('Provider appears in list', function () {",
+              "  pm.expect(json.err).to.eql(200);",
+              "  pm.expect(json.data.pagination.total).to.eql(1);",
+              "  pm.expect(json.data.items[0].id).to.eql(pm.collectionVariables.get('providerId'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"page\": 1,\n  \"pageSize\": 20,\n  \"serviceCode\": \"{{serviceCode}}\",\n  \"providerCode\": \"{{providerCode}}\",\n  \"status\": \"active\",\n  \"sortBy\": \"createdAt\",\n  \"sortOrder\": \"DESC\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/providers/list"
+      }
+    },
+    {
+      "name": "04 - Provider detail",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('Provider detail includes its pocket', function () {",
+              "  pm.expect(json.err).to.eql(200);",
+              "  pm.expect(json.data.provider.id).to.eql(pm.collectionVariables.get('providerId'));",
+              "  pm.expect(json.data.provider.pocketId).to.eql(pm.collectionVariables.get('pocketId'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"providerId\": \"{{providerId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/providers/detail"
+      }
+    },
+    {
+      "name": "05 - Update provider",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('Provider is updated', function () {",
+              "  pm.expect(json.err).to.eql(200);",
+              "  pm.expect(json.data.changed).to.eql(true);",
+              "  pm.expect(json.data.provider.name).to.eql('Postman Electricity Provider Updated');",
+              "  pm.expect(json.data.provider.category).to.eql('utility');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"providerId\": \"{{providerId}}\",\n  \"name\": \"Postman Electricity Provider Updated\",\n  \"category\": \"utility\",\n  \"requestUrl\": \"{{baseUrl}}/api/v1/mock/biller/inquiry-v2\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/providers/update"
+      }
+    },
+    {
+      "name": "06 - Deactivate provider",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('Provider is inactive', function () {",
+              "  pm.expect(json.err).to.eql(200);",
+              "  pm.expect(json.data.changed).to.eql(true);",
+              "  pm.expect(json.data.provider.status).to.eql('inactive');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"providerId\": \"{{providerId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/providers/deactivate"
+      }
+    },
+    {
+      "name": "07 - Activate provider",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "var json = pm.response.json();",
+              "pm.test('Provider is active again', function () {",
+              "  pm.expect(json.err).to.eql(200);",
+              "  pm.expect(json.data.changed).to.eql(true);",
+              "  pm.expect(json.data.provider.status).to.eql('active');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"providerId\": \"{{providerId}}\"\n}"
+        },
+        "url": "{{baseUrl}}/api/v1/officer/providers/activate"
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:1337"
+    },
+    {
+      "key": "officerPhone",
+      "value": "0900000000"
+    },
+    {
+      "key": "officerPassword",
+      "value": "Officer123",
+      "type": "string"
+    },
+    {
+      "key": "serviceCode",
+      "value": "P2P_TRANSFER"
+    },
+    {
+      "key": "officerAccessToken",
+      "value": ""
+    },
+    {
+      "key": "providerCode",
+      "value": ""
+    },
+    {
+      "key": "providerId",
+      "value": ""
+    },
+    {
+      "key": "pocketId",
+      "value": ""
+    }
+  ]
+}

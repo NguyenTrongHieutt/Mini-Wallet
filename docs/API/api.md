@@ -140,6 +140,11 @@ Body gợi ý cho `POST /api/v1/customer/providers/list`:
 | `POST /api/v1/officer/providers/activate`   | Kích hoạt provider          |
 | `POST /api/v1/officer/providers/deactivate` | Tắt provider                |
 
+Hướng dẫn chạy trực tiếp và request Postman:
+
+- [Test API provider không dùng Docker](./provider-management-postman.md)
+- [Postman collection](./provider-management.postman_collection.json)
+
 ### 3.5. Quản lý service/config
 
 | API                                                      | Mục đích                              |
