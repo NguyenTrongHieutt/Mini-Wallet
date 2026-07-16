@@ -74,7 +74,11 @@ var MESSAGE = {
   TRANSACTION_TRAIL_NOT_FOUND: "Transaction trail not found",
   TRANSACTION_TRAIL_EXPIRED: "Transaction trail expired",
   TRANSACTION_TRAIL_FORBIDDEN: "Transaction trail access denied",
+  TRANSACTION_TRAIL_NOT_EDITABLE: "Transaction trail is no longer editable",
+  TRANSACTION_TRAIL_NOT_DRAFT: "Transaction trail is not draft",
   TRANSACTION_TRAIL_NOT_PENDING: "Transaction trail is not pending",
+  TRANSACTION_TRAIL_SERVICE_MISMATCH:
+    "Transaction trail does not belong to the requested service",
   TRANSACTION_TRAIL_IDENTIFIER_REQUIRED: "Transaction trail id or transRefId is required",
   OFFICER_TRAILS_LISTED: "Transaction trails listed",
   OFFICER_TRAILS_LIST_FAILED: "Transaction trails list failed",

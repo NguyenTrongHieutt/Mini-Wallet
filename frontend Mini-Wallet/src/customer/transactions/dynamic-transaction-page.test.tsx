@@ -123,21 +123,31 @@ describe("dynamic customer transaction flow", () => {
       ],
       pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 },
     });
-    const request = vi.spyOn(customerTransactionApi, "request").mockResolvedValue({
-      transRefId: "trail-1",
-      service: definition.service,
-      amount: 50_000,
-      fee: 1_000,
-      totalAmount: 51_000,
-      currency: "VND",
-      status: "pending",
-      expiredAt: "2030-01-01T00:00:00.000Z",
-    });
+    const request = vi.spyOn(customerTransactionApi, "request").mockImplementation(
+      async (body) => {
+        const amount = Number(body.amount);
+        return {
+          transRefId: "trail-1",
+          service: definition.service,
+          amount,
+          fee: 1_000,
+          totalAmount: amount + 1_000,
+          currency: "VND",
+          input: {
+            providerCode: body.providerCode,
+            amount: body.amount,
+            currency: body.currency,
+          },
+          status: "draft",
+          expiredAt: "2030-01-01T00:00:00.000Z",
+        };
+      },
+    );
     const confirm = vi.spyOn(customerTransactionApi, "confirm").mockResolvedValue({
       transRefId: "trail-1",
       service: definition.service,
       authMethod: "PIN",
-      status: "confirmed",
+      status: "pending",
       expiredAt: "2030-01-01T00:00:00.000Z",
     });
     const verify = vi.spyOn(customerTransactionApi, "verify").mockResolvedValue({
@@ -172,6 +182,24 @@ describe("dynamic customer transaction flow", () => {
       serviceCode: "BILL_PAYMENT",
       providerCode: "EVN",
       amount: 50_000,
+      currency: "VND",
+    });
+    expect(confirm).not.toHaveBeenCalled();
+
+    await user.click(await screen.findByRole("button", { name: "Chỉnh sửa" }));
+    expect(screen.getByPlaceholderText("Mã nhà cung cấp")).toHaveValue("EVN");
+    const amountInput = screen.getByPlaceholderText("Số tiền thanh toán");
+    expect(amountInput).toHaveValue("50000");
+    await user.clear(amountInput);
+    await user.type(amountInput, "60000");
+    await user.click(screen.getByRole("button", { name: "Xem trước giao dịch" }));
+
+    await waitFor(() => expect(request).toHaveBeenCalledTimes(2));
+    expect(request.mock.calls[1]?.[0]).toEqual({
+      serviceCode: "BILL_PAYMENT",
+      transRefId: "trail-1",
+      providerCode: "EVN",
+      amount: 60_000,
       currency: "VND",
     });
     expect(confirm).not.toHaveBeenCalled();

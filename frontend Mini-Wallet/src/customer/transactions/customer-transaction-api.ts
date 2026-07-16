@@ -38,6 +38,12 @@ export function transactionErrorMessage(error: unknown): string {
   const messages: Record<string, string> = {
     INVALID_PIN: "Mã PIN không đúng. Vui lòng kiểm tra lại.",
     TRANSACTION_TRAIL_EXPIRED: "Giao dịch đã hết hạn. Vui lòng bắt đầu lại.",
+    TRANSACTION_TRAIL_NOT_EDITABLE:
+      "Giao dịch đã được xác nhận và không thể chỉnh sửa.",
+    TRANSACTION_TRAIL_NOT_DRAFT:
+      "Giao dịch không còn ở trạng thái chờ xác nhận.",
+    TRANSACTION_TRAIL_SERVICE_MISMATCH:
+      "Mã giao dịch không thuộc dịch vụ này.",
     SERVICE_NOT_FOUND: "Dịch vụ không tồn tại hoặc đã ngừng hoạt động.",
   };
 

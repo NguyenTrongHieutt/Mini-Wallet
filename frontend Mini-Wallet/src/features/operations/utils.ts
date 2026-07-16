@@ -27,7 +27,7 @@ export function optionalNumber(value: string | null): number | undefined {
 export function statusLabel(status: string): string {
   const labels: Record<string, string> = {
     success: 'Thành công', completed: 'Hoàn tất', done: 'Hoàn tất', active: 'Đang hoạt động',
-    init: 'Khởi tạo', pending: 'Đang xử lý', processing: 'Đang xử lý', requested: 'Đã tiếp nhận',
+    init: 'Khởi tạo', draft: 'Bản nháp', pending: 'Đang xử lý', processing: 'Đang xử lý', requested: 'Đã tiếp nhận',
     failed: 'Thất bại', error: 'Có lỗi', expired: 'Hết hạn', reversed: 'Đã hoàn', cancelled: 'Đã hủy',
   }
   return labels[status.toLowerCase()] ?? status
@@ -37,7 +37,7 @@ export function statusTone(status: string): string {
   const value = status.toLowerCase()
   if (['success', 'completed', 'done', 'active'].includes(value)) return 'success'
   if (['failed', 'error', 'expired', 'rejected', 'cancelled'].includes(value)) return 'danger'
-  if (['init', 'pending', 'processing', 'requested'].includes(value)) return 'warning'
+  if (['init', 'draft', 'pending', 'processing', 'requested'].includes(value)) return 'warning'
   return 'neutral'
 }
 

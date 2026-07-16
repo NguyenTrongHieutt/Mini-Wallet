@@ -13,13 +13,17 @@ module.exports = {
       model: "officer",
       index: true,
     },
+    inputMessage: {
+      type: "json",
+      required: true,
+    },
     outputMessage: {
       type: "json",
       required: true,
     },
     status: {
       type: "string",
-      enum: ["init", "pending", "done", "failed", "cancelled"],
+      enum: ["init", "draft", "pending", "done", "failed", "cancelled"],
       defaultsTo: "init",
       required: true,
       index: true,
@@ -62,6 +66,57 @@ module.exports = {
   },
 
   buildRequestMessage: async function (transInput) {
+    const transRefId =
+      transInput.body.transRefId || transInput.body.TRANSREFID;
+
+    if (transRefId) {
+      const trail = await TransactionTrail.findOne({ id: transRefId });
+
+      if (!trail) {
+        throw AppErrorService.create(
+          EnvelopeService.CODE.NOT_FOUND,
+          "TRANSACTION_TRAIL_NOT_FOUND",
+        );
+      }
+
+      this.validateTrailOwner(trail, transInput);
+      this.validateTrailExpiry(trail);
+
+      if (trail.status !== "draft") {
+        throw AppErrorService.create(
+          EnvelopeService.CODE.INVALID_STATE,
+          "TRANSACTION_TRAIL_NOT_EDITABLE",
+        );
+      }
+
+      const serviceCode = CommonService.cleanUpperString(
+        transInput.body.serviceCode,
+      );
+      if (!serviceCode) {
+        throw AppErrorService.create(
+          EnvelopeService.CODE.BAD_REQUEST,
+          "SERVICE_CODE_REQUIRED",
+        );
+      }
+
+      const service = await Service.loadActiveById(trail.serviceId);
+      if (
+        String(service.id) !== String(trail.serviceId) ||
+        CommonService.cleanUpperString(service.code) !== serviceCode
+      ) {
+        throw AppErrorService.create(
+          EnvelopeService.CODE.BAD_REQUEST,
+          "TRANSACTION_TRAIL_SERVICE_MISMATCH",
+        );
+      }
+
+      return {
+        transInput: transInput,
+        trail: trail,
+        isEdit: true,
+      };
+    }
+
     const service = await Service.loadActiveByCode(transInput.body.serviceCode);
     const trail = await TransactionTrail.create({
       serviceId: service.id,
@@ -69,6 +124,7 @@ module.exports = {
         transInput.userType === "customer" ? transInput.user.id : undefined,
       officerId:
         transInput.userType === "officer" ? transInput.user.id : undefined,
+      inputMessage: {},
       outputMessage: {},
       status: "init",
       expiredAt: new Date(Date.now() + this.TRAIL_TTL_MS),
@@ -79,15 +135,20 @@ module.exports = {
     return {
       transInput: transInput,
       trail: trail,
+      isEdit: false,
     };
   },
 
   buildExistingTrailMessage: async function (transInput) {
     const transRefId = transInput.body.transRefId || transInput.body.TRANSREFID;
-    const trail = await TransactionTrail.findOne({
-      id: transRefId,
-      status: "pending",
-    });
+    if (!transRefId) {
+      throw AppErrorService.create(
+        EnvelopeService.CODE.BAD_REQUEST,
+        "TRANSACTION_TRAIL_IDENTIFIER_REQUIRED",
+      );
+    }
+
+    const trail = await TransactionTrail.findOne({ id: transRefId });
 
     if (!trail) {
       throw AppErrorService.create(
@@ -96,14 +157,21 @@ module.exports = {
       );
     }
 
-    if (trail.expiredAt && new Date(trail.expiredAt).getTime() < Date.now()) {
+    this.validateTrailOwner(trail, transInput);
+    this.validateTrailExpiry(trail);
+
+    const expectedStatus =
+      Number(transInput.TRANSTEP) === NeonMessageService.STEP.CONFIRM
+        ? "draft"
+        : "pending";
+    if (trail.status !== expectedStatus) {
       throw AppErrorService.create(
         EnvelopeService.CODE.INVALID_STATE,
-        "TRANSACTION_TRAIL_EXPIRED",
+        expectedStatus === "draft"
+          ? "TRANSACTION_TRAIL_NOT_DRAFT"
+          : "TRANSACTION_TRAIL_NOT_PENDING",
       );
     }
-
-    this.validateTrailOwner(trail, transInput);
 
     return {
       transInput: transInput,
@@ -112,15 +180,62 @@ module.exports = {
     };
   },
 
-  updatePending: async function (trail, transBody) {
+  updateDraft: async function (trail, transInput, transBody) {
+    const expectedStatus = trail.status === "init" ? "init" : "draft";
     const updated = await TransactionTrail.update(
-      { id: trail.id },
+      { id: trail.id, status: expectedStatus },
       {
+        inputMessage: this.buildInputMessage(trail.inputMessage, transInput),
         outputMessage: { TRANSBODY: transBody },
+        status: "draft",
+        updatedBy: transBody.USERID || transBody.OFFICERID,
+      },
+    );
+
+    if (!updated || !updated[0]) {
+      throw AppErrorService.create(
+        EnvelopeService.CODE.INVALID_STATE,
+        "TRANSACTION_TRAIL_NOT_EDITABLE",
+      );
+    }
+
+    return updated[0];
+  },
+
+  lockPending: async function (trail, transBody) {
+    const updated = await TransactionTrail.update(
+      { id: trail.id, status: "draft" },
+      {
         status: "pending",
         updatedBy: transBody.USERID || transBody.OFFICERID,
       },
     );
+
+    if (!updated || !updated[0]) {
+      throw AppErrorService.create(
+        EnvelopeService.CODE.INVALID_STATE,
+        "TRANSACTION_TRAIL_NOT_DRAFT",
+      );
+    }
+
+    return updated[0];
+  },
+
+  updatePendingOutput: async function (trail, transBody) {
+    const updated = await TransactionTrail.update(
+      { id: trail.id, status: "pending" },
+      {
+        outputMessage: { TRANSBODY: transBody },
+        updatedBy: transBody.USERID || transBody.OFFICERID,
+      },
+    );
+
+    if (!updated || !updated[0]) {
+      throw AppErrorService.create(
+        EnvelopeService.CODE.INVALID_STATE,
+        "TRANSACTION_TRAIL_NOT_PENDING",
+      );
+    }
 
     return updated[0];
   },
@@ -149,6 +264,15 @@ module.exports = {
     return buildInputMessage(existingInputMessage, transInput);
   },
 
+  validateTrailExpiry: function (trail) {
+    if (trail.expiredAt && new Date(trail.expiredAt).getTime() < Date.now()) {
+      throw AppErrorService.create(
+        EnvelopeService.CODE.INVALID_STATE,
+        "TRANSACTION_TRAIL_EXPIRED",
+      );
+    }
+  },
+
   checkStatusTrail: async function (transRefId) {
     const trail = await TransactionTrail.findOne({ id: transRefId });
 
@@ -166,12 +290,7 @@ module.exports = {
       );
     }
 
-    if (trail.expiredAt && new Date(trail.expiredAt).getTime() < Date.now()) {
-      throw AppErrorService.create(
-        EnvelopeService.CODE.INVALID_STATE,
-        "TRANSACTION_TRAIL_EXPIRED",
-      );
-    }
+    this.validateTrailExpiry(trail);
 
     return trail;
   },
@@ -210,13 +329,18 @@ module.exports = {
     );
   },
 
-  markFailed: async function (trail, err) {
+  markFailed: async function (trail, err, expectedStatus) {
     if (!trail || !trail.id) {
       return;
     }
 
+    const criteria = { id: trail.id };
+    if (expectedStatus) {
+      criteria.status = expectedStatus;
+    }
+
     await TransactionTrail.update(
-      { id: trail.id },
+      criteria,
       {
         status: "failed",
         errorCode:
@@ -227,3 +351,23 @@ module.exports = {
     );
   },
 };
+
+function buildInputMessage(existingInputMessage, transInput) {
+  const body =
+    transInput && CommonService.isPlainObject(transInput.body)
+      ? transInput.body
+      : {};
+  const inputMessage = {};
+  const keys = Object.keys(body);
+
+  for (let i = 0; i < keys.length; i += 1) {
+    const key = keys[i];
+    if (key === "transRefId" || key === "TRANSREFID") {
+      continue;
+    }
+
+    inputMessage[key] = body[key];
+  }
+
+  return inputMessage;
+}

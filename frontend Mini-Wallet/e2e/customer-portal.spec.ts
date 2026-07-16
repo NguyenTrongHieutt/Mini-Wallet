@@ -121,7 +121,7 @@ test("customer completes a transaction and reviews wallet history", async ({ pag
         totalAmount: 125000,
         currency: "VND",
         input: body,
-        status: "pending",
+        status: "draft",
         expiredAt: "2099-07-16T01:10:00.000Z",
       });
     }

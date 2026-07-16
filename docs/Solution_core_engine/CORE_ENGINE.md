@@ -91,8 +91,9 @@ Nhiệm vụ:
   - `processConfirmStep`.
   - `processVerifyStep`.
 - Dựng message bằng `NeonMessage.BuildMessage(transInput)`.
-- Với step request, tạo mới `TransactionTrail`.
-- Với step confirm/verify, tìm `TransactionTrail` theo `TRANSREFID` và status `pending`.
+- Với step request, tạo mới `TransactionTrail` hoặc tải lại trail `draft` theo `TRANSREFID` để chỉnh sửa.
+- Với step confirm, tìm `TransactionTrail` theo `TRANSREFID` và status `draft`.
+- Với step verify, tìm `TransactionTrail` theo `TRANSREFID` và status `pending`.
 - Trả về message có `trail` cho Runtime Process.
 
 Nói ngắn gọn, `NeonMessage.js` biến input thô thành context runtime có thể xử lý.
@@ -116,24 +117,26 @@ Runtime Process là lõi xử lý nghiệp vụ ví. Nó là nơi quyết địn
 - Kiểm tra xác thực theo `Service.auth`.
 - Load `TransDefinition.glSteps`.
 - Gọi `MongoTransactionExecutor` để ghi ledger.
-- Cập nhật `TransactionTrail` sang `pending`, `done` hoặc `failed`.
+- Cập nhật `TransactionTrail` theo state machine `init → draft → pending → done`, hoặc sang `failed` khi xử lý thất bại.
 - Trả preview hoặc receipt.
 
 ## 4.2 Step 1 - Request
 
-Mục tiêu của request là tạo phiên giao dịch pending và trả thông tin preview cho người dùng.
+Mục tiêu của request là tạo hoặc cập nhật một bản nháp giao dịch và trả thông tin preview cho người dùng.
 
 Luồng chính:
 
-1. Tạo `TransactionTrail`.
+1. Nếu không có `transRefId`, tạo `TransactionTrail` ở trạng thái `init`; nếu có, tải trail `draft` còn hạn và đúng chủ sở hữu.
 2. Load `Service` bằng `serviceCode`.
 3. Dựng `TRANSBODY` từ `fieldBuilder`.
 4. Validate cấu trúc field bằng `TransField`.
 5. Nếu `actions.request.enabled = true`, gọi provider để inquiry và map response vào `TRANSBODY`.
 6. Tính phí.
 7. Validate nghiệp vụ bằng `TransValidation`.
-8. Cập nhật trail status thành `pending`.
-9. Trả preview gồm amount, fee, totalAmount và `transRefId`.
+8. Lưu request gốc vào `inputMessage`, lưu `TRANSBODY` vào `outputMessage` và cập nhật trail thành `draft`.
+9. Trả preview gồm amount, fee, totalAmount, input đã nhập và `transRefId`.
+
+Khi gửi lại request kèm `transRefId`, hệ thống giữ nguyên mã trail. Cập nhật cuối chỉ thành công nếu trail vẫn là `draft`, vì vậy request sửa không thể ghi đè dữ liệu sau khi confirm.
 
 Ví dụ:
 
@@ -142,15 +145,16 @@ Ví dụ:
 
 ## 4.3 Step 2 - Confirm
 
-Mục tiêu của confirm là xác nhận giao dịch pending còn hợp lệ và cho client biết cần xác thực bằng gì.
+Mục tiêu của confirm là khóa bản nháp, không cho chỉnh sửa thêm và cho client biết cần xác thực bằng gì.
 
 Luồng chính:
 
-1. Tìm `TransactionTrail` theo `TRANSREFID` và status `pending`.
-2. Load `Service` từ `trail.service`.
-3. Nếu `actions.confirm.enabled = true`, gọi provider confirm.
-4. Đọc `Service.auth.method`.
-5. Trả `authMethod` và `transRefId`.
+1. Tìm `TransactionTrail` theo `TRANSREFID` và status `draft`.
+2. Atomically chuyển trail từ `draft` sang `pending`.
+3. Load `Service` từ `trail.service`.
+4. Nếu `actions.confirm.enabled = true`, gọi provider confirm và lưu lại `TRANSBODY`.
+5. Đọc `Service.auth.method`.
+6. Trả `authMethod` và `transRefId`.
 
 Kết quả:
 
@@ -313,7 +317,8 @@ Nhiệm vụ:
 - Lưu `serviceId`, `customerId` hoặc `officerId`.
 - Lưu status:
   - `init`: vừa tạo.
-  - `pending`: đã preview, chờ confirm/verify.
+  - `draft`: đã preview và vẫn được phép chỉnh sửa.
+  - `pending`: đã confirm, bị khóa chỉnh sửa và chờ verify.
   - `done`: đã execute thành công.
   - `failed`: xử lý thất bại.
   - `cancelled`: bị hủy hoặc hết hạn.

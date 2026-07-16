@@ -39,7 +39,8 @@ Có thể thống nhất các status cơ bản:
 | `active`    | Customer, Officer, Biller, Service, Pocket | Được phép sử dụng                            |
 | `inactive`  | Biller, Service, config                    | Tạm tắt, không cho dùng mới                  |
 | `locked`    | Customer, Pocket                           | Tạm khóa do giao dịch đang xử lý hoặc rủi ro |
-| `pending`   | TransactionTrail                           | Đã request, chờ confirm/verify               |
+| `draft`     | TransactionTrail                           | Đã request, còn được phép chỉnh sửa          |
+| `pending`   | TransactionTrail                           | Đã confirm, chờ verify                       |
 | `done`      | TransactionTrail, Transaction              | Giao dịch thành công                         |
 | `failed`    | TransactionTrail, Transaction              | Giao dịch thất bại                           |
 | `cancelled` | TransactionTrail                           | Giao dịch bị hủy hoặc hết hạn                |
@@ -358,7 +359,7 @@ Có thể thống nhất các status cơ bản:
 | `officerId`     | Ref Officer  | Không    | Với cash-in/admin trigger                        |
 | `inputMessage`  | Object       | Có       | Request gốc                                      |
 | `outputMessage` | Object       | Có       | Có `TRANSBODY`                                   |
-| `status`        | String       | Có       | `init`, `pending`, `done`, `failed`, `cancelled` |
+| `status`        | String       | Có       | `init`, `draft`, `pending`, `done`, `failed`, `cancelled` |
 | `expiredAt`     | Date         | Có       | Hạn phiên                                        |
 | `errorCode`     | String       | Không    | Lỗi cuối nếu có                                  |
 | `errorMessage`  | String       | Không    | Message lỗi                                      |

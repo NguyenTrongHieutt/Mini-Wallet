@@ -222,7 +222,7 @@ paths:
   /api/v1/transactions/request:
     post:
       tags: [Transactions]
-      summary: Step 1 - Create transaction preview
+      summary: Step 1 - Create or update an editable transaction preview
       requestBody:
         required: true
         content:
@@ -250,7 +250,7 @@ paths:
   /api/v1/transactions/confirm:
     post:
       tags: [Transactions]
-      summary: Step 2 - Confirm pending transaction
+      summary: Step 2 - Lock a draft transaction for verification
       requestBody:
         required: true
         content:
@@ -717,6 +717,9 @@ components:
       properties:
         serviceCode:
           type: string
+        transRefId:
+          type: string
+          description: Existing draft trail id when editing a preview
         currency:
           type: string
           default: VND
@@ -746,6 +749,7 @@ components:
           nullable: true
         status:
           type: string
+          enum: [draft]
         expiredAt:
           type: string
           format: date-time
@@ -768,6 +772,7 @@ components:
           example: PIN
         status:
           type: string
+          enum: [pending]
         expiredAt:
           type: string
           format: date-time
@@ -937,9 +942,12 @@ components:
           type: string
         status:
           type: string
+          enum: [init, draft, pending, done, failed, cancelled]
         expiredAt:
           type: string
           format: date-time
+        inputMessage:
+          type: object
         outputMessage:
           type: object
         errorCode:

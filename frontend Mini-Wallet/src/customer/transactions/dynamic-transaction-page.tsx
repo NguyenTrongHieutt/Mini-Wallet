@@ -79,6 +79,7 @@ function TransactionFlow({
   const [preview, setPreview] = useState<TransactionPreview | null>(null);
   const [confirmation, setConfirmation] = useState<TransactionConfirmation | null>(null);
   const [receipt, setReceipt] = useState<TransactionReceipt | null>(null);
+  const [activeTransRefId, setActiveTransRefId] = useState<string | null>(null);
   const [pin, setPin] = useState("");
   const requestLocked = useRef(false);
   const confirmLocked = useRef(false);
@@ -107,8 +108,10 @@ function TransactionFlow({
     try {
       const nextPreview = await requestMutation.mutateAsync({
         serviceCode,
+        ...(activeTransRefId ? { transRefId: activeTransRefId } : {}),
         ...normalized.body,
       });
+      setActiveTransRefId(nextPreview.transRefId);
       setPreview(nextPreview);
     } catch {
       // Mutation state renders the API error.
@@ -148,12 +151,24 @@ function TransactionFlow({
     }
   }
 
+  function editRequest() {
+    if (!preview) return;
+    setValues(prefillValues(definition.bodyFields, preview.input));
+    setErrors({});
+    setPreview(null);
+    setConfirmation(null);
+    setPin("");
+    confirmMutation.reset();
+    verifyMutation.reset();
+  }
+
   function restart() {
     setValues(initialValues(definition.bodyFields));
     setErrors({});
     setPreview(null);
     setConfirmation(null);
     setReceipt(null);
+    setActiveTransRefId(null);
     setPin("");
     requestLocked.current = false;
     confirmLocked.current = false;
@@ -224,7 +239,7 @@ function TransactionFlow({
             <div className="grid gap-2 sm:grid-cols-2">
               <Button
                 className="border-slate-600 bg-transparent text-slate-200 hover:bg-slate-800"
-                onClick={restart}
+                onClick={editRequest}
                 type="button"
                 variant="outline"
               >
@@ -536,6 +551,22 @@ function initialValues(fields: TransactionInputField[]): RawValues {
     }
     return result;
   }, {});
+}
+
+function prefillValues(
+  fields: TransactionInputField[],
+  input?: Record<string, unknown> | null,
+): RawValues {
+  const values = initialValues(fields);
+  if (!input) return values;
+
+  fields.forEach((field) => {
+    if (Object.prototype.hasOwnProperty.call(input, field.name)) {
+      values[field.name] = displayValue(input[field.name], normalizeDataType(field));
+    }
+  });
+
+  return values;
 }
 
 function displayValue(value: unknown, type: string): RawFieldValue {

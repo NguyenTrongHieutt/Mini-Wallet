@@ -14,14 +14,17 @@ module.exports = {
       Service.calculateFee(service, transBody);
       await TransValidation.validateTransaction(service, transBody);
 
-      const updatedTrail = await TransactionTrail.updatePending(
+      const updatedTrail = await TransactionTrail.updateDraft(
         message.trail,
+        message.transInput,
         transBody,
       );
 
       return Service.buildPreview(updatedTrail, service, transBody);
     } catch (err) {
-      await TransactionTrail.markFailed(message.trail, err);
+      if (!message.isEdit) {
+        await TransactionTrail.markFailed(message.trail, err, "init");
+      }
       throw err;
     }
   },
@@ -30,16 +33,24 @@ module.exports = {
     const message = await NeonMessageService.buildMessage(transInput);
     const service = await Service.loadActiveById(message.trail.serviceId);
     const transBody = message.TRANSBODY || {};
+    let lockedPending = false;
     try {
-      await Service.runConfirmAction(service, transBody);
-      const updatedTrail = await TransactionTrail.updatePending(
+      const pendingTrail = await TransactionTrail.lockPending(
         message.trail,
+        transBody,
+      );
+      lockedPending = true;
+      await Service.runConfirmAction(service, transBody);
+      const updatedTrail = await TransactionTrail.updatePendingOutput(
+        pendingTrail,
         transBody,
       );
 
       return Service.buildConfirmResult(updatedTrail, service);
     } catch (err) {
-      await TransactionTrail.markFailed(message.trail, err);
+      if (lockedPending) {
+        await TransactionTrail.markFailed(message.trail, err, "pending");
+      }
       throw err;
     }
   },
@@ -308,7 +319,7 @@ module.exports = {
             { message: transactionErrorMessage },
           );
         }
-        await TransactionTrail.markFailed(message.trail, err);
+        await TransactionTrail.markFailed(message.trail, err, "pending");
         throw err;
       } finally {
         await session.endSession();

@@ -38,9 +38,9 @@ Provider suggestions là ngoại lệ duy nhất được tự truy vấn khi nh
 
 ## Luồng giao dịch
 
-1. Gửi `POST /api/v1/transactions/request` với `{ serviceCode, ...dynamicFields }`.
-2. Hiển thị preview từ response; không tự confirm.
-3. Người dùng bấm xác nhận mới gọi `POST /api/v1/transactions/confirm`.
+1. Gửi `POST /api/v1/transactions/request` với `{ serviceCode, ...dynamicFields }`; khi chỉnh sửa gửi thêm `transRefId` của bản nháp.
+2. Hiển thị preview `draft` từ response; nút chỉnh sửa quay lại form với dữ liệu `input` và giữ nguyên `transRefId`.
+3. Người dùng bấm xác nhận mới gọi `POST /api/v1/transactions/confirm`, chuyển trail sang `pending` và khóa chỉnh sửa.
 4. Dựa trên `authMethod`:
    - `PIN`: hiện input PIN và nút verify; nhập đủ sáu số vẫn không tự submit.
    - `NONE`: hiện nút hoàn tất gọi verify không kèm PIN.
@@ -74,4 +74,3 @@ Sau verify thành công invalidate:
 - PIN đủ sáu số vẫn cần bấm nút; `NONE` chỉ verify sau click.
 - Double-click chỉ tạo một mutation; transaction hết hạn không thể tiếp tục.
 - Verify thành công render receipt và invalidate đúng history/wallet cache.
-

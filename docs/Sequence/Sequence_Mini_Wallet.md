@@ -59,7 +59,7 @@ sequenceDiagram
     Validation->>Validation: validateSenderAccountSufficiency(SENDERID, AMOUNT, DEBITFEE)
     Validation-->>Engine: Valid
 
-    Engine->>Trail: Update status = pending
+    Engine->>Trail: Save inputMessage and TRANSBODY<br/>Update status = draft
 
     Engine-->>NM: Preview<br/>amount, fee, totalAmount, transRefId
     NM-->>TX: Preview
@@ -82,9 +82,10 @@ sequenceDiagram
     NM->>Engine: processConfirmStep(transInput)
 
     Engine->>NM: NeonMessage.BuildMessage(transInput)
-    NM->>Trail: findOne(id = TRANSREFID, status = pending)
+    NM->>Trail: findOne(id = TRANSREFID, status = draft)
     Trail-->>NM: trail
     NM-->>Engine: message { trail }
+    Engine->>Trail: Atomic update status draft → pending
 
     Engine->>Engine: serviceId = trail.service
     Engine->>Service: Load Service by serviceId
@@ -241,7 +242,7 @@ sequenceDiagram
     Validation->>Validation: validateSenderAccountSufficiency(SENDERID, AMOUNT, DEBITFEE)
     Validation-->>Engine: Valid
 
-    Engine->>Trail: Update status = pending
+    Engine->>Trail: Save inputMessage and TRANSBODY<br/>Update status = draft
 
     Engine-->>NM: Preview<br/>amount, fee=0, totalAmount, transRefId
     NM-->>TX: Preview
@@ -262,9 +263,10 @@ sequenceDiagram
     NM->>Engine: processConfirmStep(transInput)
 
     Engine->>NM: NeonMessage.BuildMessage(transInput)
-    NM->>Trail: findOne(id = TRANSREFID, status = pending)
+    NM->>Trail: findOne(id = TRANSREFID, status = draft)
     Trail-->>NM: trail
     NM-->>Engine: message { trail }
+    Engine->>Trail: Atomic update status draft → pending
 
     Engine->>Engine: serviceId = trail.service
     Engine->>Service: Load Service by serviceId
@@ -423,7 +425,7 @@ sequenceDiagram
     Validation->>Validation: validateSenderAccountSufficiency(SENDERID, AMOUNT, DEBITFEE)
     Validation-->>Engine: Valid
 
-    Engine->>Trail: Update status = pending
+    Engine->>Trail: Save inputMessage and TRANSBODY<br/>Update status = draft
 
     Engine-->>NM: Preview<br/>billInfo, amount, fee, totalAmount, transRefId
     NM-->>TX: Preview
@@ -446,9 +448,10 @@ sequenceDiagram
     NM->>Engine: processConfirmStep(transInput)
 
     Engine->>NM: NeonMessage.BuildMessage(transInput)
-    NM->>Trail: findOne(id = TRANSREFID, status = pending)
+    NM->>Trail: findOne(id = TRANSREFID, status = draft)
     Trail-->>NM: trail
     NM-->>Engine: message { trail }
+    Engine->>Trail: Atomic update status draft → pending
 
     Engine->>Engine: serviceId = trail.service
     Engine->>Service: Load Service by serviceId
@@ -624,7 +627,7 @@ autonumber
     Engine->>Validation: validateTransaction(serviceId, TRANSBODY)
     Validation-->>Engine: Valid
 
-    Engine->>Trail: Update status = pending
+    Engine->>Trail: Save inputMessage and TRANSBODY<br/>Update status = draft
 
     Engine-->>NM: Preview
     NM-->>TX: Preview
@@ -656,9 +659,10 @@ autonumber
     NM->>Engine: processConfirmStep(transInput)
 
     Engine->>NM: NeonMessage.BuildMessage(transInput)
-    NM->>Trail: findOne id = TRANSREFID and status = pending
+    NM->>Trail: findOne id = TRANSREFID and status = draft
     Trail-->>NM: trail
     NM-->>Engine: message trail
+    Engine->>Trail: Atomic update status draft → pending
 
     Engine->>Engine: serviceId = trail.service
     Engine->>Service: Load Service by serviceId

@@ -103,8 +103,8 @@ Body gợi ý cho `POST /api/v1/customer/providers/list`:
 
 | API                                 | Mục đích                   |
 | ----------------------------------- | -------------------------- |
-| `POST /api/v1/transactions/request` | Bước 1: Khởi tạo giao dịch |
-| `POST /api/v1/transactions/confirm` | Bước 2: Xác nhận giao dịch |
+| `POST /api/v1/transactions/request` | Bước 1: Tạo hoặc chỉnh sửa bản nháp giao dịch |
+| `POST /api/v1/transactions/confirm` | Bước 2: Xác nhận và khóa chỉnh sửa giao dịch |
 | `POST /api/v1/transactions/verify`  | Bước 3: Thực thi giao dịch |
 | `POST /api/v1/transactions/cancel`  | Hủy giao dịch đang pending |
 
