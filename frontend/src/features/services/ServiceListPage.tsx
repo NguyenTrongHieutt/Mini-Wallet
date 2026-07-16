@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { serviceApi } from './api'
+import { serviceKeys } from './serviceQueries'
 
 const statusLabel = { draft: 'Bản nháp', active: 'Đang hoạt động', inactive: 'Đã tắt' }
 
@@ -9,8 +10,9 @@ export function ServiceListPage() {
   const [q, setQ] = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
+  const filters = { q, status, page }
   const query = useQuery({
-    queryKey: ['services', { q, status, page }],
+    queryKey: serviceKeys.list(filters),
     queryFn: () => serviceApi.list({ q, status: status || undefined, page, pageSize: 12, sortBy: 'updatedAt', sortOrder: 'DESC' }),
   })
 
@@ -42,4 +44,3 @@ export function ServiceListPage() {
     </section>
   )
 }
-

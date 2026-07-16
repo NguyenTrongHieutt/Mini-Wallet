@@ -1,4 +1,5 @@
 import { ApiError, apiPost } from '@/lib/api'
+import { mappedErrorMessage } from '@/shared/error-message'
 import type {
   CashInPayload,
   LedgerEntry,
@@ -43,5 +44,5 @@ const FRIENDLY_ERRORS: Record<string, string> = {
 
 export function operationErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return 'Đã có lỗi xảy ra. Vui lòng thử lại.'
-  return FRIENDLY_ERRORS[error.message] ?? error.message
+  return mappedErrorMessage(error, FRIENDLY_ERRORS, error.message)
 }

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Eye, RefreshCw, Search } from 'lucide-react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { appConfig } from '@/config/app-config'
 import { Pagination, QueryState, StatusBadge } from './components'
 import { useTrails } from './hooks'
 import type { TrailFilters } from './types'
@@ -14,7 +15,10 @@ export function TrailListPage() {
   const [draft, setDraft] = useState(query)
   const filters = useMemo<TrailFilters>(() => ({
     page: positiveInteger(params.get('page'), 1),
-    pageSize: Math.min(positiveInteger(params.get('pageSize'), 20), 100),
+    pageSize: Math.min(
+      positiveInteger(params.get('pageSize'), appConfig.pagination.defaultPageSize),
+      appConfig.pagination.maxPageSize,
+    ),
     q: query || undefined,
     status: params.get('status') || undefined,
     serviceCode: params.get('serviceCode') || undefined,

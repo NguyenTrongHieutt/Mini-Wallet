@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = async function(req, res, next) {
   try {
     const header = req.headers.authorization || '';
@@ -18,7 +20,7 @@ module.exports = async function(req, res, next) {
 
     const session = await Session.findOne({
       tokenHash: CryptoService.hashToken(token),
-      status: 'active'
+      status: DOMAIN.status.ACTIVE
     });
 
     if (!session || new Date(session.expiredAt).getTime() <= Date.now()) {
@@ -29,10 +31,11 @@ module.exports = async function(req, res, next) {
       return res.error(EnvelopeService.CODE.UNAUTHORIZED, 'INVALID_TOKEN');
     }
 
-    const model = session.userType === 'officer' ? Officer : Customer;
+    const model =
+      session.userType === DOMAIN.userType.OFFICER ? Officer : Customer;
     const user = await model.findOne({ id: session.userId });
 
-    if (!user || user.status !== 'active') {
+    if (!user || user.status !== DOMAIN.status.ACTIVE) {
       return res.error(EnvelopeService.CODE.UNAUTHORIZED, 'USER_NOT_ACTIVE');
     }
 

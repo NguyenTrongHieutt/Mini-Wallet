@@ -24,7 +24,7 @@ export interface CustomerLoginPayload {
 export interface CustomerRegisterPayload extends CustomerLoginPayload {
   pin: string;
   displayName?: string;
-  currency: "VND";
+  currency: string;
 }
 
 export interface CustomerLoginResult extends CustomerSession {

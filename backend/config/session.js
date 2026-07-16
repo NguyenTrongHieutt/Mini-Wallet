@@ -12,6 +12,8 @@
  * http://sailsjs.org/#!/documentation/reference/sails.config/sails.config.session.html
  */
 
+var auth = require("./miniWallet").miniWallet.auth;
+
 module.exports.session = {
 
   /***************************************************************************
@@ -21,7 +23,7 @@ module.exports.session = {
   * of your users, forcing them to log in again.                             *
   *                                                                          *
   ***************************************************************************/
-  secret: 'af326fdd9f1775a29969bad117b908b8',
+  secret: auth.sessionSecret,
 
 
   /***************************************************************************

@@ -28,7 +28,10 @@ function normalizeInput(body, info) {
   const serviceCode = CommonService.cleanUpperString(
     body.serviceCode || body.SERVICECODE || body.service_code
   );
-  const currency = CommonService.cleanUpperString(body.currency || body.CURRENCY, "VND");
+  const currency = CommonService.cleanUpperString(
+    body.currency || body.CURRENCY,
+    MiniWalletConfigService.wallet().defaultCurrency,
+  );
 
   body.serviceCode = serviceCode;
   body.currency = currency;

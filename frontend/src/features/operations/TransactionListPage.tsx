@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Eye, RefreshCw, Search } from 'lucide-react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { appConfig } from '@/config/app-config'
 import { Pagination, QueryState, StatusBadge } from './components'
 import { useTransactions } from './hooks'
 import type { TransactionFilters } from './types'
@@ -49,7 +50,10 @@ export function TransactionListPage() {
   const [draft, setDraft] = useState<TransactionFilterDraft>(() => draftFromParams(params))
   const filters = useMemo<TransactionFilters>(() => ({
     page: positiveInteger(params.get('page'), 1),
-    pageSize: Math.min(positiveInteger(params.get('pageSize'), 20), 100),
+    pageSize: Math.min(
+      positiveInteger(params.get('pageSize'), appConfig.pagination.defaultPageSize),
+      appConfig.pagination.maxPageSize,
+    ),
     q: params.get('q') || undefined,
     status: params.get('status') || undefined,
     serviceCode: params.get('serviceCode') || undefined,

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
+import { appConfig } from "@/config/app-config";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -166,7 +167,7 @@ export function CustomerRegisterPage() {
         password: values.password,
         pin: values.pin,
         displayName: values.displayName || undefined,
-        currency: "VND",
+        currency: appConfig.defaultCurrency,
       });
       navigate("/customer/services", { replace: true });
     } catch (error) {
@@ -180,7 +181,9 @@ export function CustomerRegisterPage() {
         <CardHeader>
           <div className="mb-4 grid size-11 place-items-center rounded-xl bg-blue-600 text-white lg:hidden"><WalletCards /></div>
           <CardTitle className="text-2xl">Tạo tài khoản customer</CardTitle>
-          <CardDescription className="text-slate-400">Ví mặc định được tạo bằng đơn vị tiền tệ VND.</CardDescription>
+          <CardDescription className="text-slate-400">
+            Ví mặc định được tạo bằng đơn vị tiền tệ {appConfig.defaultCurrency}.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <SessionProbeWarning />

@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   attributes: {
     phone: {
@@ -20,8 +22,8 @@ module.exports = {
     },
     status: {
       type: "string",
-      enum: ["active", "locked"],
-      defaultsTo: "active",
+      enum: [DOMAIN.status.ACTIVE, DOMAIN.status.LOCKED],
+      defaultsTo: DOMAIN.status.ACTIVE,
       required: true,
       index: true,
     },
@@ -34,7 +36,9 @@ module.exports = {
   },
 
   getActiveCustomerByPhone: async function (phone) {
-    console.log("Searching for active customer with phone:", phone);
-    return Customer.findOne({ phone: phone, status: "active" });
+    return Customer.findOne({
+      phone: phone,
+      status: DOMAIN.status.ACTIVE,
+    });
   },
 };

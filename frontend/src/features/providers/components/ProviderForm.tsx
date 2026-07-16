@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import type { FormEvent, ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import { appConfig } from '@/config/app-config'
 import type { Provider } from '../types'
 
 const codePattern = /^[A-Z0-9][A-Z0-9_-]{1,49}$/
@@ -52,7 +53,7 @@ export function ProviderForm({ mode, provider, pending, serverError, onCancel, o
       requestUrl: provider?.requestUrl ?? '',
       confirmUrl: provider?.confirmUrl ?? '',
       verifyUrl: provider?.verifyUrl ?? '',
-      currency: 'VND',
+      currency: appConfig.defaultCurrency,
       balance: 0,
       pocketName: '',
     },
@@ -115,7 +116,7 @@ export function ProviderForm({ mode, provider, pending, serverError, onCancel, o
             <div><h2>Ví Provider</h2><p>Ví được tạo cùng Provider và không thể sửa từ màn này.</p></div>
           </div>
           <div className="provider-form__grid">
-            <Field label="Loại tiền" required error={errorFor('currency')} hint="Mặc định VND">
+            <Field label="Loại tiền" required error={errorFor('currency')} hint={`Mặc định ${appConfig.defaultCurrency}`}>
               <input {...register('currency')} className="provider-input provider-uppercase" maxLength={3} onInput={uppercaseInput} />
             </Field>
             <Field label="Số dư ban đầu" required error={errorFor('balance')} hint="Nhập theo đơn vị nhỏ nhất của tiền tệ">

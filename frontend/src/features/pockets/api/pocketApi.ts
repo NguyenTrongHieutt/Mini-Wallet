@@ -1,4 +1,5 @@
 import { apiPost } from '@/lib/api'
+import { mappedErrorMessage } from '@/shared/error-message'
 import type {
   CreatePocketInput,
   PocketFilters,
@@ -42,7 +43,7 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 export function pocketErrorMessage(error: unknown): string {
   if (error instanceof Error) {
-    return ERROR_MESSAGES[error.message] ?? error.message
+    return mappedErrorMessage(error, ERROR_MESSAGES, error.message)
   }
   return 'Đã có lỗi xảy ra. Vui lòng thử lại.'
 }

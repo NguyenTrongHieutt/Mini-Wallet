@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   getBalance: async function (customer, body) {
     body = CommonService.isPlainObject(body) ? body : {};
@@ -13,7 +15,9 @@ module.exports = {
     }
 
     const requestedCurrency = CommonService.cleanString(body.currency);
-    const currencyCode = (requestedCurrency || "VND").toUpperCase();
+    const currencyCode = (
+      requestedCurrency || MiniWalletConfigService.wallet().defaultCurrency
+    ).toUpperCase();
     if (!/^[A-Z]{3}$/.test(currencyCode)) {
       throw AppErrorService.create(
         EnvelopeService.CODE.BAD_REQUEST,
@@ -23,7 +27,7 @@ module.exports = {
 
     const currency = await Currency.loadActive(currencyCode);
     const pocket = await Pocket.findOne({
-      ownerType: "customer",
+      ownerType: DOMAIN.ownerType.CUSTOMER,
       ownerId: customerId,
       currency: currency.id,
     });

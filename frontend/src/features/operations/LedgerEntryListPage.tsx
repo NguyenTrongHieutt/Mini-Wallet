@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Eye, RefreshCw, Search } from 'lucide-react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
+import { appConfig } from '@/config/app-config'
 import { Pagination, QueryState, StatusBadge } from './components'
 import { useLedgerEntries } from './hooks'
 import type { LedgerFilters } from './types'
@@ -42,7 +43,10 @@ export function LedgerEntryListPage() {
   const [draft, setDraft] = useState<LedgerFilterDraft>(() => draftFromParams(params))
   const filters = useMemo<LedgerFilters>(() => ({
     page: positiveInteger(params.get('page'), 1),
-    pageSize: Math.min(positiveInteger(params.get('pageSize'), 20), 100),
+    pageSize: Math.min(
+      positiveInteger(params.get('pageSize'), appConfig.pagination.defaultPageSize),
+      appConfig.pagination.maxPageSize,
+    ),
     transRefId: params.get('transRefId') || undefined,
     status: params.get('status') || undefined,
     pocketId: params.get('pocketId') || undefined,

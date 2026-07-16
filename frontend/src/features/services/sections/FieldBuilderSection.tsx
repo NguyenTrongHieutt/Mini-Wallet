@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { serviceApi } from '../api'
 import { builderQueries } from '../catalogs'
 import { moveOrderedItem, normalizeOrder, removeOrderedItem } from '../orderUtils'
+import { serviceKeys } from '../serviceQueries'
 import type { FieldBuilderItem, Service } from '../types'
 import { JsonValueEditor } from './JsonValueEditor'
 
@@ -35,7 +36,7 @@ export function FieldBuilderSection({ service, readOnly }: { service: Service; r
   const mutation = useMutation({
     mutationFn: (value: FieldBuilderItem[]) => serviceApi.updateFieldBuilder(service.id, value),
     onSuccess: ({ service: next }) => {
-      client.setQueryData(['service', service.id], { service: next })
+      client.setQueryData(serviceKeys.detail(service.id), { service: next })
       setItems(next.fieldBuilder)
       setJson(JSON.stringify(next.fieldBuilder, null, 2))
     },

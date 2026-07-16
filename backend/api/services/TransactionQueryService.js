@@ -1,6 +1,6 @@
-module.exports = {
-  MAX_PAGE_SIZE: 100,
+var DOMAIN = require("../../config/domain").domain;
 
+module.exports = {
   listCustomerTransactions: async function (customer, body) {
     const paging = normalizePaging(body);
     const criteria = await buildCustomerCriteria(customer, body);
@@ -106,7 +106,7 @@ async function buildOfficerCriteria(body) {
   if (transRefId) criteria.transRefId = transRefId;
 
   const serviceId = await resolveServiceId(body);
-  if (serviceId) criteria.serviceId = serviceId;
+  if (serviceId !== undefined) criteria.serviceId = serviceId;
   applyNumberRange(criteria, "amount", body.amountFrom, body.amountTo);
   applyNumberRange(criteria, "totalAmount", body.totalAmountFrom, body.totalAmountTo);
   applyDateRange(criteria, body.dateFrom || body.createdFrom, body.dateTo || body.createdTo);
@@ -195,7 +195,7 @@ async function buildCustomerCriteria(customer, body) {
   }
 
   const serviceId = await resolveServiceId(body);
-  if (serviceId) {
+  if (serviceId !== undefined) {
     criteria.serviceId = serviceId;
   }
 
@@ -240,29 +240,15 @@ async function resolveServiceId(body) {
 
   const serviceCode = CommonService.cleanUpperString(body.serviceCode);
   if (!serviceCode) {
-    return "";
+    return undefined;
   }
 
   const service = await Service.findOne({ code: serviceCode });
-  return service ? String(service.id) : "__SERVICE_NOT_FOUND__";
+  return service ? String(service.id) : null;
 }
 
 function normalizePaging(body) {
-  const rawPage = Number(body.page);
-  const rawPageSize = Number(body.pageSize || body.limit);
-  const page = Number.isFinite(rawPage) && rawPage > 0
-    ? Math.floor(rawPage)
-    : 1;
-  const requestedPageSize = Number.isFinite(rawPageSize) && rawPageSize > 0
-    ? Math.floor(rawPageSize)
-    : 20;
-  const pageSize = Math.min(requestedPageSize, module.exports.MAX_PAGE_SIZE);
-
-  return {
-    page: page,
-    pageSize: pageSize,
-    skip: (page - 1) * pageSize,
-  };
+  return RequestQueryService.normalizePaging(body);
 }
 
 function normalizeSort(body) {
@@ -411,7 +397,7 @@ function buildCustomerParty(customer) {
   }
 
   return {
-    type: "customer",
+    type: DOMAIN.userType.CUSTOMER,
     phone: customer && customer.phone,
     displayName: customer && customer.displayName,
     status: customer && customer.status,
@@ -424,7 +410,7 @@ function buildProviderParty(provider) {
   }
 
   return {
-    type: "provider",
+    type: DOMAIN.ownerType.PROVIDER,
     code: provider && provider.code,
     name: provider && provider.name,
     category: provider && provider.category,

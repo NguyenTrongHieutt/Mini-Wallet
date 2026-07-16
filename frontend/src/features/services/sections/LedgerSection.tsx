@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { apiPost, ApiError } from '../../../lib/api'
+import { pocketKeys } from '../../pockets/api/pocketQueries'
 import { serviceApi } from '../api'
 import { builtInFields } from '../catalogs'
 import { moveOrderedItem, normalizeOrder, removeOrderedItem } from '../orderUtils'
+import { serviceKeys } from '../serviceQueries'
 import type { GlStep, Service } from '../types'
 import { SuggestionCombobox } from './SuggestionCombobox'
 
@@ -16,8 +18,9 @@ const blankStep = (order: number): GlStep => ({
 
 export function LedgerSection({ service, readOnly }: { service: Service; readOnly: boolean }) {
   const client = useQueryClient()
+  const pocketFilters = { page: 1, pageSize: 100, status: 'active' as const }
   const query = useQuery({
-    queryKey: ['serviceDefinition', service.id],
+    queryKey: serviceKeys.definition(service.id),
     queryFn: async () => {
       try {
         return await serviceApi.definition(service.id)
@@ -28,8 +31,8 @@ export function LedgerSection({ service, readOnly }: { service: Service; readOnl
     },
   })
   const pockets = useQuery({
-    queryKey: ['pockets', { pageSize: 100 }],
-    queryFn: () => apiPost<{ items: Array<{ id: string; name: string; ownerType: string }> }>('/api/v1/officer/pockets/list', { page: 1, pageSize: 100, status: 'active' }),
+    queryKey: pocketKeys.list(pocketFilters),
+    queryFn: () => apiPost<{ items: Array<{ id: string; name: string; ownerType: string }> }>('/api/v1/officer/pockets/list', pocketFilters),
   })
   const [steps, setSteps] = useState<GlStep[]>([])
   const [advanced, setAdvanced] = useState(false)
@@ -46,7 +49,7 @@ export function LedgerSection({ service, readOnly }: { service: Service; readOnl
     mutationFn: (value: GlStep[]) => serviceApi.updateDefinition(service.id, value),
     onSuccess: ({ transDefinition }) => {
       const next = normalizeOrder(transDefinition.glSteps)
-      client.setQueryData(['serviceDefinition', service.id], { transDefinition: { ...transDefinition, glSteps: next } })
+      client.setQueryData(serviceKeys.definition(service.id), { transDefinition: { ...transDefinition, glSteps: next } })
       setSteps(next)
       setJson(JSON.stringify(next, null, 2))
     },

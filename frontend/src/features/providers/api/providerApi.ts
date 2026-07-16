@@ -6,6 +6,7 @@ import type {
   UpdateProviderInput,
 } from '../types'
 import { ApiError, apiPost } from '@/lib/api'
+import { mappedErrorMessage } from '@/shared/error-message'
 
 export { ApiError as ProviderApiError }
 
@@ -46,5 +47,5 @@ const ERROR_MESSAGES: Record<string, string> = {
 
 export function providerErrorMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return 'Đã có lỗi xảy ra. Vui lòng thử lại.'
-  return ERROR_MESSAGES[error.message] ?? error.message
+  return mappedErrorMessage(error, ERROR_MESSAGES, error.message)
 }

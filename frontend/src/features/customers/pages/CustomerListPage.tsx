@@ -6,15 +6,11 @@ import { customerErrorMessage } from '../api/customerApi'
 import { CustomerStatusBadge } from '../components/CustomerStatusBadge'
 import { OperationsPagination } from '@/features/pockets/components/OperationsPagination'
 import { formatDate } from '@/features/pockets/utils'
+import { paginationFromSearch } from '@/shared/url-query'
 import type { CustomerFilters, CustomerSortField, CustomerStatus } from '../types'
 import '@/features/pockets/operations.css'
 
 const VALID_SORTS: CustomerSortField[] = ['phone', 'displayName', 'status', 'createdAt', 'updatedAt']
-
-function positiveNumber(value: string | null, fallback: number): number {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback
-}
 
 export function CustomerListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -25,9 +21,9 @@ export function CustomerListPage() {
   const filters = useMemo<CustomerFilters>(() => {
     const statusParam = searchParams.get('status')
     const sortParam = searchParams.get('sortBy') as CustomerSortField | null
+    const pagination = paginationFromSearch(searchParams)
     return {
-      page: positiveNumber(searchParams.get('page'), 1),
-      pageSize: Math.min(positiveNumber(searchParams.get('pageSize'), 20), 100),
+      ...pagination,
       q: q || undefined,
       status: statusParam === 'active' || statusParam === 'locked' ? statusParam : undefined,
       sortBy: sortParam && VALID_SORTS.includes(sortParam) ? sortParam : 'createdAt',

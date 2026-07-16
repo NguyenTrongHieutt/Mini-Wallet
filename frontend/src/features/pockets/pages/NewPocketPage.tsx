@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { AlertCircle, ArrowLeft, Building2, Landmark, WalletCards } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { appConfig } from '@/config/app-config'
 import { pocketErrorMessage } from '../api/pocketApi'
 import { useCreatePocket } from '../api/pocketQueries'
 import type { CreatablePocketOwnerType, CreatePocketInput } from '../types'
@@ -16,7 +17,13 @@ interface PocketFormState {
 
 type FormErrors = Partial<Record<keyof PocketFormState, string>>
 
-const INITIAL_FORM: PocketFormState = { ownerType: 'system', ownerId: '', name: '', currency: 'VND', balance: '0' }
+const INITIAL_FORM: PocketFormState = {
+  ownerType: 'system',
+  ownerId: '',
+  name: '',
+  currency: appConfig.defaultCurrency,
+  balance: '0',
+}
 
 function validate(form: PocketFormState): FormErrors {
   const errors: FormErrors = {}
@@ -79,7 +86,7 @@ export function NewPocketPage() {
             </fieldset>
             <label className="ops-field"><span>Mã chủ sở hữu</span><input value={form.ownerId} onChange={(event) => setField('ownerId', event.target.value)} placeholder={form.ownerType === 'system' ? 'VD: MINI_WALLET_CORE' : 'VD: JITS_BANK'} aria-invalid={Boolean(errors.ownerId)} />{errors.ownerId ? <span className="ops-field-error">{errors.ownerId}</span> : <span className="ops-field-hint">Mã ổn định để nhận diện chủ sở hữu trong định khoản.</span>}</label>
             <label className="ops-field"><span>Tên hiển thị</span><input value={form.name} onChange={(event) => setField('name', event.target.value)} placeholder="VD: Ví phí giao dịch" aria-invalid={Boolean(errors.name)} />{errors.name && <span className="ops-field-error">{errors.name}</span>}</label>
-            <label className="ops-field"><span>Loại tiền</span><input value={form.currency} maxLength={3} onChange={(event) => setField('currency', event.target.value.toUpperCase().replace(/[^A-Z]/g, ''))} placeholder="VND" aria-invalid={Boolean(errors.currency)} />{errors.currency ? <span className="ops-field-error">{errors.currency}</span> : <span className="ops-field-hint">Mã ISO gồm 3 chữ cái.</span>}</label>
+            <label className="ops-field"><span>Loại tiền</span><input value={form.currency} maxLength={3} onChange={(event) => setField('currency', event.target.value.toUpperCase().replace(/[^A-Z]/g, ''))} placeholder={appConfig.defaultCurrency} aria-invalid={Boolean(errors.currency)} />{errors.currency ? <span className="ops-field-error">{errors.currency}</span> : <span className="ops-field-hint">Mã ISO gồm 3 chữ cái.</span>}</label>
             <label className="ops-field"><span>Số dư ban đầu</span><input value={form.balance} inputMode="numeric" onChange={(event) => setField('balance', event.target.value.replace(/[^0-9]/g, ''))} placeholder="0" aria-invalid={Boolean(errors.balance)} />{errors.balance ? <span className="ops-field-error">{errors.balance}</span> : <span className="ops-field-hint">Nhập theo đơn vị nhỏ nhất mà hệ thống đang lưu; không dùng dấu phân cách.</span>}</label>
           </div>
           <div className="ops-alert ops-alert--info" style={{ marginTop: 22, marginBottom: 0 }}><AlertCircle size={18} /><div><strong>Kiểm tra trước khi tạo</strong><p>Mỗi chủ sở hữu chỉ có một ví cho mỗi loại tiền. Loại chủ sở hữu, mã chủ và loại tiền không thể chỉnh ở màn này sau khi tạo.</p></div></div>

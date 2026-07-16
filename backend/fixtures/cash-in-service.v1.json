@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "kind": "service",
+  "currencyCode": "VND",
+  "pocket": {
+    "ownerType": "bank",
+    "ownerId": "CASH_IN_BANK",
+    "balance": 1000000000,
+    "balancePolicy": "minimum",
+    "name": "Cash-in Settlement Bank",
+    "status": "active"
+  },
+  "service": {
+    "code": "CASH_IN",
+    "name": "Officer Cash-in",
+    "description": "Officer credits a customer wallet from the cash-in settlement bank.",
+    "fieldBuilder": [
+      {
+        "order": 1,
+        "name": "CUSTOMERPHONE",
+        "role": "receiver phone",
+        "rule": "mapping",
+        "source": "body",
+        "variable": "customerPhone",
+        "datatype": "string",
+        "errorCode": "RECEIVER_PHONE_REQUIRED"
+      },
+      {
+        "order": 2,
+        "name": "AMOUNT",
+        "role": "cash-in amount",
+        "rule": "mapping",
+        "source": "body",
+        "variable": "amount",
+        "datatype": "number",
+        "errorCode": "AMOUNT_REQUIRED"
+      },
+      {
+        "order": 3,
+        "name": "CURRENCY",
+        "role": "currency code",
+        "rule": "mapping",
+        "source": "body",
+        "variable": "currency",
+        "defaultValue": "VND",
+        "datatype": "string",
+        "errorCode": "CURRENCY_REQUIRED"
+      },
+      {
+        "order": 4,
+        "name": "SENDERID",
+        "role": "settlement bank pocket",
+        "rule": "query",
+        "source": "database",
+        "query": "Pocket.getActivePocketByOwner",
+        "params": [
+          { "source": "constant", "value": "bank" },
+          { "source": "constant", "value": "CASH_IN_BANK" },
+          "CURRENCY"
+        ],
+        "output": "id",
+        "datatype": "string",
+        "errorCode": "SENDER_POCKET_NOT_FOUND"
+      },
+      {
+        "order": 5,
+        "name": "RECEIVERCUSTOMERID",
+        "role": "receiver customer id",
+        "rule": "query",
+        "source": "database",
+        "query": "Customer.getActiveCustomerByPhone",
+        "params": ["CUSTOMERPHONE"],
+        "output": "id",
+        "datatype": "string",
+        "errorCode": "RECEIVER_NOT_FOUND"
+      },
+      {
+        "order": 6,
+        "name": "RECEIVERID",
+        "role": "receiver pocket id",
+        "rule": "query",
+        "source": "database",
+        "query": "Pocket.getActivePocketByOwner",
+        "params": [
+          { "source": "constant", "value": "customer" },
+          "RECEIVERCUSTOMERID",
+          "CURRENCY"
+        ],
+        "output": "id",
+        "datatype": "string",
+        "errorCode": "RECEIVER_POCKET_NOT_FOUND"
+      },
+      {
+        "order": 7,
+        "name": "MESSAGE",
+        "role": "transaction message",
+        "rule": "mapping",
+        "source": "body",
+        "variable": "message",
+        "defaultValue": "Officer cash-in",
+        "datatype": "string",
+        "errorCode": "TRANSACTION_FIELD_INVALID"
+      }
+    ],
+    "actions": {
+      "request": { "enabled": false },
+      "confirm": { "enabled": false },
+      "verify": { "enabled": false }
+    },
+    "fee": {
+      "type": "fixed",
+      "value": 0,
+      "currency": "VND"
+    },
+    "auth": {
+      "method": "NONE"
+    },
+    "status": "active"
+  },
+  "transFields": [
+    {
+      "fieldName": "CUSTOMERPHONE",
+      "fieldFormat": "string",
+      "minLength": 9,
+      "maxLength": 15,
+      "regex": "^\\+?[0-9]{9,15}$",
+      "isRequired": true,
+      "needSecured": false,
+      "order": 1,
+      "errorCode": "RECEIVER_PHONE_INVALID",
+      "status": "active"
+    },
+    {
+      "fieldName": "AMOUNT",
+      "fieldFormat": "number",
+      "minLength": 1,
+      "isRequired": true,
+      "needSecured": false,
+      "order": 2,
+      "errorCode": "AMOUNT_INVALID",
+      "status": "active"
+    },
+    {
+      "fieldName": "CURRENCY",
+      "fieldFormat": "string",
+      "minLength": 3,
+      "maxLength": 3,
+      "regex": "^[A-Z]{3}$",
+      "isRequired": true,
+      "needSecured": false,
+      "order": 3,
+      "errorCode": "CURRENCY_INVALID",
+      "status": "active"
+    }
+  ],
+  "transValidations": [
+    {
+      "validateFunc": "validateRole",
+      "validateFields": "USERTYPE:officer",
+      "order": 1,
+      "errorCode": "OFFICER_PERMISSION_REQUIRED",
+      "status": "active"
+    },
+    {
+      "validateFunc": "validateSenderAccountSufficiency",
+      "validateFields": "SENDERID:AMOUNT:DEBITFEE",
+      "order": 2,
+      "errorCode": "INSUFFICIENT_BALANCE",
+      "status": "active"
+    }
+  ],
+  "definition": {
+    "glSteps": [
+      {
+        "order": 1,
+        "amount": "AMOUNT",
+        "debit": { "level": "productLevel", "target": "SENDERID" },
+        "credit": { "level": "productLevel", "target": "RECEIVERID" }
+      }
+    ],
+    "status": "active"
+  }
+}

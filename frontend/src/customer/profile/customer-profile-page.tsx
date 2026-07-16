@@ -1,15 +1,17 @@
 import { CalendarDays, LockKeyhole, Phone, RefreshCw, UserRound, Wallet } from "lucide-react";
+import { appConfig } from "@/config/app-config";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCustomerAuth } from "@/customer/auth/customer-auth-context";
 import type { CustomerCurrency } from "@/customer/types";
 import { cn } from "@/lib/utils";
+import { formatDateOnly, formatNumber } from "@/shared/formatters";
 import { useCustomerWallet } from "./customer-wallet-queries";
 
 export function CustomerProfilePage() {
   const { customer } = useCustomerAuth();
-  const wallet = useCustomerWallet("VND");
+  const wallet = useCustomerWallet(appConfig.defaultCurrency);
   const pocket = wallet.data;
   const currency = currencyCode(pocket?.currency);
 
@@ -30,7 +32,7 @@ export function CustomerProfilePage() {
                 <div aria-label="Đang tải số dư" className="mt-2 h-10 w-52 animate-pulse rounded bg-white/15" />
               ) : pocket ? (
                 <p className="mt-1 text-3xl font-semibold sm:text-4xl">
-                  {Number(pocket.balance).toLocaleString("vi-VN")} {currency}
+                  {formatNumber(Number(pocket.balance))} {currency}
                 </p>
               ) : (
                 <p className="mt-1 text-3xl font-semibold sm:text-4xl">
@@ -100,11 +102,12 @@ function ProfileRow({ icon: Icon, label, value }: {
 }
 
 function currencyCode(currency?: CustomerCurrency | string) {
-  return typeof currency === "string" ? currency : currency?.code || "VND";
+  return typeof currency === "string"
+    ? currency
+    : currency?.code || appConfig.defaultCurrency;
 }
 
 function formatDate(value?: string) {
   if (!value) return "—";
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("vi-VN");
+  return formatDateOnly(value);
 }

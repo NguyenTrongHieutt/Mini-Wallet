@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   attributes: {
     transRefId: {
@@ -26,8 +28,8 @@ module.exports = {
     },
     status: {
       type: "string",
-      enum: ["settled", "failed"],
-      defaultsTo: "settled",
+      enum: [DOMAIN.status.SETTLED, DOMAIN.status.FAILED],
+      defaultsTo: DOMAIN.status.SETTLED,
       required: true,
     },
     createdBy: {

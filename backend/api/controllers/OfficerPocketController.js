@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   create: async function (req, res) {
     try {
@@ -46,7 +48,7 @@ module.exports = {
       const data = await OfficerPocketService.changeStatus(
         req.body || {},
         req.info.user,
-        "locked",
+        DOMAIN.status.LOCKED,
       );
       return res.ok(EnvelopeService.CODE.OK, "POCKET_LOCKED", data);
     } catch (err) {
@@ -59,7 +61,7 @@ module.exports = {
       const data = await OfficerPocketService.changeStatus(
         req.body || {},
         req.info.user,
-        "active",
+        DOMAIN.status.ACTIVE,
       );
       return res.ok(EnvelopeService.CODE.OK, "POCKET_UNLOCKED", data);
     } catch (err) {

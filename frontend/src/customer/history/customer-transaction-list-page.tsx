@@ -1,6 +1,7 @@
 import { ArrowDownUp, ArrowRight, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useMemo, useState, type ComponentProps, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { appConfig } from "@/config/app-config";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -125,7 +126,7 @@ export function CustomerTransactionListPage() {
 
       <div className="mt-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <p className="text-sm text-slate-400" aria-live="polite">
-          {result ? `${result.pagination.total.toLocaleString("vi-VN")} giao dịch` : "Danh sách giao dịch"}
+          {result ? `${result.pagination.total.toLocaleString(appConfig.locale)} giao dịch` : "Danh sách giao dịch"}
         </p>
         <label className="flex items-center gap-2 text-sm text-slate-300">
           <ArrowDownUp className="size-4 text-slate-500" />Sắp xếp
@@ -263,13 +264,13 @@ function HistoryLoading() {
 }
 
 export function formatMoney(value: number, currency: string) {
-  return `${Number(value || 0).toLocaleString("vi-VN")} ${currency || "VND"}`;
+  return `${Number(value || 0).toLocaleString(appConfig.locale)} ${currency || appConfig.defaultCurrency}`;
 }
 
 export function formatDateTime(value?: string) {
   if (!value) return "—";
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString("vi-VN");
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString(appConfig.locale);
 }
 
 function defaultRequest(): CustomerTransactionListRequest {
@@ -302,7 +303,10 @@ function requestFromSearch(params: URLSearchParams): CustomerTransactionListRequ
   const direction = params.get("direction");
   return {
     page: Math.max(Number(params.get("page")) || 1, 1),
-    pageSize: Math.min(Math.max(Number(params.get("pageSize")) || DEFAULT_PAGE_SIZE, 1), 100),
+    pageSize: Math.min(
+      Math.max(Number(params.get("pageSize")) || DEFAULT_PAGE_SIZE, 1),
+      appConfig.pagination.maxPageSize,
+    ),
     q: text(params.get("q")), direction: direction === "sent" || direction === "received" ? direction : undefined,
     status: text(params.get("status")), serviceCode: text(params.get("serviceCode")),
     dateFrom: text(params.get("dateFrom")), dateTo: text(params.get("dateTo")),
@@ -345,4 +349,3 @@ function dateInputValue(value?: string) {
 function numberInputValue(value?: number) {
   return value === undefined ? "" : String(value);
 }
-

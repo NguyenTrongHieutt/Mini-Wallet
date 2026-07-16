@@ -1,6 +1,8 @@
+var DOMAIN = require("../../config/domain").domain;
+var DEFAULTS = require("../../config/miniWallet").miniWallet;
+
 module.exports = {
-  AUTH_COOKIE_NAME: process.env.AUTH_COOKIE_NAME || "jwt",
-  AUTH_TOKEN_TTL_MS: 24 * 60 * 60 * 1000,
+  AUTH_COOKIE_NAME: DEFAULTS.auth.cookieName,
 
   registerCustomer: async function (body) {
     body = body || {};
@@ -15,7 +17,11 @@ module.exports = {
       );
     }
 
-    const currency = await Currency.findOne({ code: body.currency || "VND" });
+    const walletConfig = MiniWalletConfigService.wallet();
+    const currency = await Currency.findOne({
+      code: body.currency || walletConfig.defaultCurrency,
+      status: DOMAIN.status.ACTIVE,
+    });
     if (!currency) {
       throw AppErrorService.create(
         EnvelopeService.CODE.NOT_FOUND,
@@ -23,48 +29,63 @@ module.exports = {
       );
     }
 
-    const customer = await Customer.create({
-      phone: body.phone,
-      passwordHash: CryptoService.hashSecret(body.password),
-      pinHash: CryptoService.hashSecret(body.pin),
-      displayName: body.displayName || body.phone,
-      status: "active",
-    });
+    let customer;
+    let pocket;
 
-    const pocketSeed = {
-      ownerId: String(customer.id),
-      ownerType: "customer",
-      currency: currency.id,
-      balance: 1000000,
-      name: customer.displayName + " Wallet",
-      status: "active",
-    };
-    pocketSeed.checksum = CryptoService.checksumPocket(pocketSeed);
+    try {
+      customer = await Customer.create({
+        phone: body.phone,
+        passwordHash: CryptoService.hashSecret(body.password),
+        pinHash: CryptoService.hashSecret(body.pin),
+        displayName: body.displayName || body.phone,
+        status: DOMAIN.status.ACTIVE,
+      });
 
-    const pocket = await Pocket.create(pocketSeed);
+      const pocketSeed = {
+        ownerId: String(customer.id),
+        ownerType: DOMAIN.ownerType.CUSTOMER,
+        currency: currency.id,
+        balance: walletConfig.registrationBalance,
+        name: customer.displayName + " Wallet",
+        status: DOMAIN.status.ACTIVE,
+      };
+      pocketSeed.checksum = CryptoService.checksumPocket(pocketSeed);
+      pocket = await Pocket.create(pocketSeed);
 
-    const auth = await this.createAuthSession(customer, "customer");
+      const auth = await this.createAuthSession(
+        customer,
+        DOMAIN.userType.CUSTOMER,
+      );
 
-    return {
-      token: auth.token,
-      data: {
-        customer: this.publicUser(customer),
-        pocket: this.publicPocket(pocket, currency),
-        auth: {
-          accessToken: auth.token,
-          expiresAt: auth.expiredAt,
-          tokenType: "Bearer",
+      return {
+        token: auth.token,
+        data: {
+          customer: this.publicUser(customer),
+          pocket: this.publicPocket(pocket, currency),
+          auth: {
+            accessToken: auth.token,
+            expiresAt: auth.expiredAt,
+            tokenType: "Bearer",
+          },
         },
-      },
-    };
+      };
+    } catch (err) {
+      if (pocket && pocket.id) {
+        await Pocket.destroy({ id: pocket.id });
+      }
+      if (customer && customer.id) {
+        await Customer.destroy({ id: customer.id });
+      }
+      throw err;
+    }
   },
 
   loginCustomer: async function (body) {
-    return this.login(Customer, "customer", body);
+    return this.login(Customer, DOMAIN.userType.CUSTOMER, body);
   },
 
   loginOfficer: async function (body) {
-    return this.login(Officer, "officer", body);
+    return this.login(Officer, DOMAIN.userType.OFFICER, body);
   },
 
   login: async function (model, userType, body) {
@@ -78,7 +99,7 @@ module.exports = {
 
     if (
       !user ||
-      user.status !== "active" ||
+      user.status !== DOMAIN.status.ACTIVE ||
       !CryptoService.verifySecret(secret, hash)
     ) {
       throw AppErrorService.create(
@@ -87,8 +108,7 @@ module.exports = {
       );
     }
 
-    const expiredAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const auth = await this.createAuthSession(user, userType, expiredAt);
+    const auth = await this.createAuthSession(user, userType);
 
     const data = {
       auth: {
@@ -108,12 +128,17 @@ module.exports = {
   logout: async function (user) {
     AuthValidatorService.validateLogoutInput(user);
 
-    await Session.update({ id: user.sessionId }, { status: "revoked" });
+    await Session.update(
+      { id: user.sessionId },
+      { status: DOMAIN.status.REVOKED },
+    );
     return null;
   },
 
   createAuthSession: async function (user, userType, expiredAt) {
-    expiredAt = expiredAt || new Date(Date.now() + this.AUTH_TOKEN_TTL_MS);
+    const authConfig = MiniWalletConfigService.auth();
+    const tokenTtlMs = authConfig.tokenTtlSeconds * 1000;
+    expiredAt = expiredAt || new Date(Date.now() + tokenTtlMs);
 
     const token = JwtService.sign({
       userId: String(user.id),
@@ -124,10 +149,12 @@ module.exports = {
       tokenHash: CryptoService.hashToken(token),
       userType: userType,
       userId: String(user.id),
-      status: "active",
+      status: DOMAIN.status.ACTIVE,
       expiredAt: expiredAt,
-      customer: userType === "customer" ? user.id : undefined,
-      officer: userType === "officer" ? user.id : undefined,
+      customer:
+        userType === DOMAIN.userType.CUSTOMER ? user.id : undefined,
+      officer:
+        userType === DOMAIN.userType.OFFICER ? user.id : undefined,
     });
 
     return {
@@ -174,19 +201,24 @@ module.exports = {
   },
 
   cookieOptions: function () {
+    const authConfig = MiniWalletConfigService.auth();
     return {
       httpOnly: true,
-      secure: process.env.COOKIE_SECURE === "true",
-      maxAge: this.AUTH_TOKEN_TTL_MS,
+      secure: authConfig.cookieSecure,
+      maxAge: authConfig.tokenTtlSeconds * 1000,
       path: "/",
     };
   },
 
   setAuthCookie: function (res, token) {
-    res.cookie(this.AUTH_COOKIE_NAME, token, this.cookieOptions());
+    res.cookie(
+      MiniWalletConfigService.auth().cookieName,
+      token,
+      this.cookieOptions(),
+    );
   },
 
   clearAuthCookie: function (res) {
-    res.clearCookie(this.AUTH_COOKIE_NAME, { path: "/" });
+    res.clearCookie(MiniWalletConfigService.auth().cookieName, { path: "/" });
   },
 };

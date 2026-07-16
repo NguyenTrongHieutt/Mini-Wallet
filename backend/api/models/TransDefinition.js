@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   attributes: {
     code: {
@@ -17,8 +19,8 @@ module.exports = {
     },
     status: {
       type: "string",
-      enum: ["active", "inactive"],
-      defaultsTo: "active",
+      enum: [DOMAIN.status.ACTIVE, DOMAIN.status.INACTIVE],
+      defaultsTo: DOMAIN.status.ACTIVE,
       required: true,
       index: true,
     },
@@ -33,7 +35,7 @@ module.exports = {
   loadActiveByService: async function (service) {
     const definition = await TransDefinition.findOne({
       service: String(service.id),
-      status: "active",
+      status: DOMAIN.status.ACTIVE,
     });
 
     if (!definition) {

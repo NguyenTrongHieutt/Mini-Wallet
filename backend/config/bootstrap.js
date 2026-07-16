@@ -25,6 +25,26 @@ module.exports.bootstrap = function bootstrap(cb) {
         { keys: { service: 1 }, options: { unique: true } },
       ],
     },
+    {
+      model: Transaction,
+      indexes: [
+        {
+          keys: { transRefId: 1 },
+          options: { unique: true },
+        },
+      ],
+    },
+    {
+      model: PocketEntry,
+      indexes: [
+        {
+          keys: { transRefId: 1, stepOrder: 1 },
+          options: {
+            unique: true,
+          },
+        },
+      ],
+    },
   ];
 
   runIndexJobs(indexJobs, cb);

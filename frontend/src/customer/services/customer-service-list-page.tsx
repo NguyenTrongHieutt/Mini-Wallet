@@ -1,6 +1,7 @@
 import { ArrowDownAZ, ArrowRight, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { appConfig } from "@/config/app-config";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -124,7 +125,7 @@ export function CustomerServiceListPage() {
 
       <div className="mt-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <div aria-live="polite" className="text-sm text-slate-400">
-          {result ? `${result.pagination.total.toLocaleString("vi-VN")} dịch vụ` : "Danh sách dịch vụ"}
+          {result ? `${result.pagination.total.toLocaleString(appConfig.locale)} dịch vụ` : "Danh sách dịch vụ"}
         </div>
         <label className="flex items-center gap-2 text-sm text-slate-300">
           <ArrowDownAZ className="size-4 text-slate-500" />
@@ -260,7 +261,10 @@ function requestFromSearch(params: URLSearchParams): CustomerServiceListRequest 
 
   return {
     page: Math.max(Number(params.get("page")) || 1, 1),
-    pageSize: Math.min(Math.max(Number(params.get("pageSize")) || DEFAULT_PAGE_SIZE, 1), 100),
+    pageSize: Math.min(
+      Math.max(Number(params.get("pageSize")) || DEFAULT_PAGE_SIZE, 1),
+      appConfig.pagination.maxPageSize,
+    ),
     q: params.get("q") || undefined,
     code: params.get("code") || undefined,
     sortBy,

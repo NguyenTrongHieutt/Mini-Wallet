@@ -1,8 +1,7 @@
 const url = require("url");
+const DOMAIN = require("../../config/domain").domain;
 
 module.exports = {
-  MAX_PAGE_SIZE: 100,
-
   create: async function (body, officer) {
     body = CommonService.isPlainObject(body) ? body : {};
     const values = normalizeCreateInput(body);
@@ -24,7 +23,7 @@ module.exports = {
       requestUrl: values.requestUrl,
       confirmUrl: values.confirmUrl,
       verifyUrl: values.verifyUrl,
-      status: "active",
+      status: DOMAIN.status.ACTIVE,
       identityKey: buildIdentityKey(values.serviceCode, values.code),
       createdBy: officerId,
       updatedBy: officerId,
@@ -36,12 +35,12 @@ module.exports = {
       provider = await Provider.create(providerSeed);
 
       const pocketSeed = {
-        ownerType: "provider",
+        ownerType: DOMAIN.ownerType.PROVIDER,
         ownerId: String(provider.id),
         currency: currency.id,
         balance: values.balance,
         name: values.pocketName,
-        status: "active",
+        status: DOMAIN.status.ACTIVE,
         createdBy: officerId,
         updatedBy: officerId,
       };
@@ -181,7 +180,10 @@ module.exports = {
   },
 
   changeStatus: async function (body, officer, targetStatus) {
-    if (["active", "inactive"].indexOf(targetStatus) === -1) {
+    if (
+      [DOMAIN.status.ACTIVE, DOMAIN.status.INACTIVE].indexOf(targetStatus) ===
+      -1
+    ) {
       throw AppErrorService.create(
         EnvelopeService.CODE.BAD_REQUEST,
         "PROVIDER_STATUS_INVALID",
@@ -210,7 +212,7 @@ module.exports = {
       }
       throw AppErrorService.create(
         EnvelopeService.CODE.INVALID_STATE,
-        targetStatus === "active"
+        targetStatus === DOMAIN.status.ACTIVE
           ? "PROVIDER_ACTIVATE_FAILED"
           : "PROVIDER_DEACTIVATE_FAILED",
       );
@@ -233,7 +235,10 @@ function normalizeCreateInput(body) {
     requestUrl: normalizeUrl(body.requestUrl, "requestUrl"),
     confirmUrl: normalizeUrl(body.confirmUrl, "confirmUrl"),
     verifyUrl: normalizeUrl(body.verifyUrl, "verifyUrl"),
-    currencyCode: CommonService.cleanUpperString(body.currency, "VND"),
+    currencyCode: CommonService.cleanUpperString(
+      body.currency,
+      MiniWalletConfigService.wallet().defaultCurrency,
+    ),
     balance:
       body.balance === undefined || body.balance === null ? 0 : body.balance,
   };
@@ -419,18 +424,7 @@ function validateRequiredProviderValues(values) {
 }
 
 function normalizePaging(body) {
-  const requestedPage = Number(body.page || 1);
-  const requestedPageSize = Number(body.pageSize || body.limit || 20);
-  const page = Number.isFinite(requestedPage)
-    ? Math.max(Math.floor(requestedPage), 1)
-    : 1;
-  const pageSize = Number.isFinite(requestedPageSize)
-    ? Math.min(
-        Math.max(Math.floor(requestedPageSize), 1),
-        module.exports.MAX_PAGE_SIZE,
-      )
-    : 20;
-  return { page: page, pageSize: pageSize, skip: (page - 1) * pageSize };
+  return RequestQueryService.normalizePaging(body);
 }
 
 function buildCriteria(body) {
@@ -444,7 +438,10 @@ function buildCriteria(body) {
     body.q || body.search || body.keyword,
   );
 
-  if (status && ["active", "inactive"].indexOf(status) === -1) {
+  if (
+    status &&
+    [DOMAIN.status.ACTIVE, DOMAIN.status.INACTIVE].indexOf(status) === -1
+  ) {
     throw AppErrorService.create(
       EnvelopeService.CODE.BAD_REQUEST,
       "PROVIDER_STATUS_INVALID",

@@ -77,6 +77,7 @@ var MESSAGE = {
   TRANSACTION_TRAIL_NOT_EDITABLE: "Transaction trail is no longer editable",
   TRANSACTION_TRAIL_NOT_DRAFT: "Transaction trail is not draft",
   TRANSACTION_TRAIL_NOT_PENDING: "Transaction trail is not pending",
+  TRANSACTION_ALREADY_PROCESSING: "Transaction is already being processed",
   TRANSACTION_TRAIL_SERVICE_MISMATCH:
     "Transaction trail does not belong to the requested service",
   TRANSACTION_TRAIL_IDENTIFIER_REQUIRED: "Transaction trail id or transRefId is required",
@@ -300,6 +301,7 @@ module.exports = {
   format: function (code, messageKey, data) {
     var payload = {
       err: code,
+      code: messageKey || "OK",
       message: this.message(messageKey),
     };
 

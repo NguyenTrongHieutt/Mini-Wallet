@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { serviceApi } from './api'
 import { serviceSteps } from './catalogs'
+import { serviceKeys } from './serviceQueries'
 import { BasicSection } from './sections/BasicSection'
 import { FieldBuilderSection } from './sections/FieldBuilderSection'
 import { TransFieldsSection } from './sections/TransFieldsSection'
@@ -15,8 +16,8 @@ const validSteps = new Set(serviceSteps.map(([key]) => key))
 export function ServiceWorkspacePage() {
   const { serviceId = '', step = 'basic' } = useParams()
   const client = useQueryClient()
-  const query = useQuery({ queryKey: ['service', serviceId], queryFn: () => serviceApi.detail(serviceId), enabled: Boolean(serviceId) })
-  const unpublish = useMutation({ mutationFn: () => serviceApi.unpublish(serviceId), onSuccess: () => client.invalidateQueries({ queryKey: ['service', serviceId] }) })
+  const query = useQuery({ queryKey: serviceKeys.detail(serviceId), queryFn: () => serviceApi.detail(serviceId), enabled: Boolean(serviceId) })
+  const unpublish = useMutation({ mutationFn: () => serviceApi.unpublish(serviceId), onSuccess: () => client.invalidateQueries({ queryKey: serviceKeys.detail(serviceId) }) })
   if (!validSteps.has(step as never)) return <Navigate replace to={`/services/${serviceId}/config/basic`} />
   if (query.isLoading) return <div className="panel empty-state">Đang tải cấu hình dịch vụ…</div>
   if (query.error || !query.data) return <div className="alert error">{query.error instanceof Error ? query.error.message : 'Không tìm thấy dịch vụ'}</div>

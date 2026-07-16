@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { validationCatalog } from '../catalogs'
 import { serviceApi } from '../api'
+import { serviceKeys } from '../serviceQueries'
 import type { Service, TransValidation } from '../types'
 
 type ValidationForm = { validateFunc: string; validateFields: string; errorCode: string; order: number | null; status: 'active' | 'inactive' }
@@ -11,7 +12,7 @@ export function ValidationsSection({ service, readOnly }: { service: Service; re
   const client = useQueryClient()
   const [form, setForm] = useState<ValidationForm>(initial)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const query = useQuery({ queryKey: ['serviceValidations', service.id], queryFn: () => serviceApi.listValidations(service.id) })
+  const query = useQuery({ queryKey: serviceKeys.validations(service.id), queryFn: () => serviceApi.listValidations(service.id) })
   const reset = () => { setForm(initial); setEditingId(null) }
   const mutation = useMutation({
     mutationFn: () => {
@@ -24,9 +25,9 @@ export function ValidationsSection({ service, readOnly }: { service: Service; re
         ? serviceApi.updateValidation(service.id, editingId, body)
         : serviceApi.insertValidation(service.id, body)
     },
-    onSuccess: () => { reset(); void client.invalidateQueries({ queryKey: ['serviceValidations', service.id] }) },
+    onSuccess: () => { reset(); void client.invalidateQueries({ queryKey: serviceKeys.validations(service.id) }) },
   })
-  const toggle = useMutation({ mutationFn: (item: TransValidation) => serviceApi.updateValidation(service.id, item.id, { status: item.status === 'active' ? 'inactive' : 'active' }), onSuccess: () => client.invalidateQueries({ queryKey: ['serviceValidations', service.id] }) })
+  const toggle = useMutation({ mutationFn: (item: TransValidation) => serviceApi.updateValidation(service.id, item.id, { status: item.status === 'active' ? 'inactive' : 'active' }), onSuccess: () => client.invalidateQueries({ queryKey: serviceKeys.validations(service.id) }) })
   const choose = (value: string) => { const entry = validationCatalog.find((option) => option.value === value); setForm({ ...form, validateFunc: value, validateFields: entry?.defaultFields ?? '' }) }
   const submit = (event: FormEvent) => { event.preventDefault(); mutation.mutate() }
   return <div className="section-stack"><header className="section-heading"><div><h2>Kiểm tra nghiệp vụ</h2><p>Chọn quy tắc bằng ngôn ngữ gần gũi; hệ thống lưu tên hàm validator canonical tương ứng.</p></div></header>

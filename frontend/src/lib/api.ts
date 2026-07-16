@@ -1,8 +1,7 @@
-export interface ApiEnvelope<T> {
-  err: number;
-  message: string;
-  data: T;
-}
+import { appConfig } from "@/config/app-config";
+import type { ApiEnvelope } from "@/shared/api-contract";
+
+export type { ApiEnvelope } from "@/shared/api-contract";
 
 export interface ApiFieldError {
   field?: string;
@@ -12,13 +11,21 @@ export interface ApiFieldError {
 
 export class ApiError extends Error {
   readonly code: number;
+  readonly errorCode?: string;
   readonly data: unknown;
   readonly cause?: unknown;
 
-  constructor(message: string, code = 500, data?: unknown, cause?: unknown) {
+  constructor(
+    message: string,
+    code = 500,
+    data?: unknown,
+    cause?: unknown,
+    errorCode?: string,
+  ) {
     super(message);
     this.name = "ApiError";
     this.code = code;
+    this.errorCode = errorCode;
     this.data = data;
     this.cause = cause;
   }
@@ -32,15 +39,12 @@ export class ApiError extends Error {
 
 export const AUTH_EXPIRED_EVENT = "mini-wallet:auth-expired";
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
-
 function isEnvelope(value: unknown): value is ApiEnvelope<unknown> {
   return Boolean(
     value &&
       typeof value === "object" &&
       typeof (value as { err?: unknown }).err === "number" &&
-      typeof (value as { message?: unknown }).message === "string" &&
-      "data" in value,
+      typeof (value as { message?: unknown }).message === "string",
   );
 }
 
@@ -54,7 +58,7 @@ export async function apiPost<T>(path: string, body: unknown = {}): Promise<T> {
   let response: Response;
 
   try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
+    response = await fetch(`${appConfig.api.baseUrl}${path}`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -78,7 +82,13 @@ export async function apiPost<T>(path: string, body: unknown = {}): Promise<T> {
   if (!response.ok || payload.err !== 200) {
     const code = payload.err || response.status;
     notifyAuthExpired(code);
-    throw new ApiError(payload.message || "Yêu cầu không thành công.", code, payload.data);
+    throw new ApiError(
+      payload.message || "Yêu cầu không thành công.",
+      code,
+      payload.data,
+      undefined,
+      payload.code,
+    );
   }
 
   return payload.data as T;

@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { appConfig } from "@/config/app-config";
 import { customerKeys } from "@/customer/api/customer-auth-api";
 import { customerTransactionApi } from "./customer-transaction-api";
 
@@ -45,7 +46,7 @@ export function useTransactionMutations() {
     onSuccess: (receipt) => {
       void queryClient.invalidateQueries({ queryKey: customerTransactionKeys.all });
       void queryClient.invalidateQueries({
-        queryKey: customerKeys.wallet(receipt.currency || "VND"),
+        queryKey: customerKeys.wallet(receipt.currency || appConfig.defaultCurrency),
       });
     },
   });

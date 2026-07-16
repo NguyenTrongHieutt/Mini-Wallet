@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   attributes: {
     phone: {
@@ -16,8 +18,8 @@ module.exports = {
     },
     status: {
       type: "string",
-      enum: ["active", "inactive"],
-      defaultsTo: "active",
+      enum: [DOMAIN.status.ACTIVE, DOMAIN.status.INACTIVE],
+      defaultsTo: DOMAIN.status.ACTIVE,
       required: true,
       index: true,
     },

@@ -31,7 +31,11 @@ services:
       MONGO_PORT: 27017
       MONGO_DATABASE: mini_wallet
       MONGO_URI: mongodb://mongo:27017/mini_wallet?replicaSet=rs0
-      JWT_SECRET: change-me-in-local-env
+      JWT_SECRET: ${JWT_SECRET}
+      SESSION_SECRET: ${SESSION_SECRET}
+      AUTH_TOKEN_TTL_SECONDS: ${AUTH_TOKEN_TTL_SECONDS:-86400}
+      DEFAULT_CURRENCY: ${DEFAULT_CURRENCY:-VND}
+      REGISTRATION_BALANCE: ${REGISTRATION_BALANCE:-0}
     ports:
       - "1337:1337"
     volumes:

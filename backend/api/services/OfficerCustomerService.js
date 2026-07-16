@@ -1,6 +1,6 @@
-module.exports = {
-  MAX_PAGE_SIZE: 100,
+var DOMAIN = require("../../config/domain").domain;
 
+module.exports = {
   list: async function (body) {
     body = CommonService.isPlainObject(body) ? body : {};
 
@@ -32,7 +32,7 @@ module.exports = {
   detail: async function (body) {
     const customer = await findCustomer(body);
     const pockets = await Pocket.find({
-      ownerType: "customer",
+      ownerType: DOMAIN.ownerType.CUSTOMER,
       ownerId: String(customer.id),
     }).populate("currency");
 
@@ -46,7 +46,10 @@ module.exports = {
 
   changeStatus: async function (body, officer, targetStatus) {
     const customer = await findCustomer(body);
-    const sourceStatus = targetStatus === "locked" ? "active" : "locked";
+    const sourceStatus =
+      targetStatus === DOMAIN.status.LOCKED
+        ? DOMAIN.status.ACTIVE
+        : DOMAIN.status.LOCKED;
     let changed = false;
 
     if (customer.status !== targetStatus) {
@@ -63,7 +66,7 @@ module.exports = {
         if (!current || current.status !== targetStatus) {
           throw AppErrorService.create(
             EnvelopeService.CODE.INVALID_STATE,
-            targetStatus === "locked"
+            targetStatus === DOMAIN.status.LOCKED
               ? "CUSTOMER_LOCK_FAILED"
               : "CUSTOMER_UNLOCK_FAILED",
           );
@@ -77,15 +80,15 @@ module.exports = {
       }
     }
 
-    if (targetStatus === "locked") {
+    if (targetStatus === DOMAIN.status.LOCKED) {
       await Session.update(
         {
-          userType: "customer",
+          userType: DOMAIN.userType.CUSTOMER,
           userId: String(customer.id),
-          status: "active",
+          status: DOMAIN.status.ACTIVE,
         },
         {
-          status: "revoked",
+          status: DOMAIN.status.REVOKED,
           updatedBy: String(officer.id),
         },
       );
@@ -99,23 +102,7 @@ module.exports = {
 };
 
 function normalizePaging(body) {
-  const requestedPage = Number(body.page || 1);
-  const requestedPageSize = Number(body.pageSize || body.limit || 20);
-  const page = Number.isFinite(requestedPage)
-    ? Math.max(Math.floor(requestedPage), 1)
-    : 1;
-  const pageSize = Number.isFinite(requestedPageSize)
-    ? Math.min(
-        Math.max(Math.floor(requestedPageSize), 1),
-        module.exports.MAX_PAGE_SIZE,
-      )
-    : 20;
-
-  return {
-    page: page,
-    pageSize: pageSize,
-    skip: (page - 1) * pageSize,
-  };
+  return RequestQueryService.normalizePaging(body);
 }
 
 function buildCriteria(body) {
@@ -125,7 +112,10 @@ function buildCriteria(body) {
     body.q || body.search || body.keyword,
   );
 
-  if (status && ["active", "locked"].indexOf(status) === -1) {
+  if (
+    status &&
+    [DOMAIN.status.ACTIVE, DOMAIN.status.LOCKED].indexOf(status) === -1
+  ) {
     throw AppErrorService.create(
       EnvelopeService.CODE.BAD_REQUEST,
       "CUSTOMER_STATUS_INVALID",

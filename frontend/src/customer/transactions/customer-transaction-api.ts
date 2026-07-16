@@ -1,4 +1,6 @@
 import { ApiError, apiPost } from "@/lib/api";
+import { appConfig } from "@/config/app-config";
+import { mappedErrorMessage } from "@/shared/error-message";
 import type {
   ProviderListData,
   ServiceInputFieldsData,
@@ -10,7 +12,12 @@ import type {
 export const customerTransactionApi = {
   inputFields: (serviceCode: string) =>
     apiPost<ServiceInputFieldsData>("/api/v1/customer/services/input-fields", { serviceCode }),
-  providers: (serviceCode: string, q: string, page: number, pageSize = 20) =>
+  providers: (
+    serviceCode: string,
+    q: string,
+    page: number,
+    pageSize = appConfig.pagination.providerSuggestionsPageSize,
+  ) =>
     apiPost<ProviderListData>("/api/v1/customer/providers/list", {
       serviceCode,
       q,
@@ -47,5 +54,5 @@ export function transactionErrorMessage(error: unknown): string {
     SERVICE_NOT_FOUND: "Dịch vụ không tồn tại hoặc đã ngừng hoạt động.",
   };
 
-  return messages[error.message] ?? error.message;
+  return mappedErrorMessage(error, messages, error.message);
 }

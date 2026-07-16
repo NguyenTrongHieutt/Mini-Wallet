@@ -1,9 +1,7 @@
 module.exports = {
-  MAX_PAGE_SIZE: 100,
-
   listEntries: async function (body) {
     body = CommonService.isPlainObject(body) ? body : {};
-    const paging = normalizePaging(body, this.MAX_PAGE_SIZE);
+    const paging = normalizePaging(body);
     const criteria = await buildEntryCriteria(body);
     const sort = normalizeSort(body);
     const total = await PocketEntry.count(criteria);
@@ -90,7 +88,7 @@ async function buildEntryCriteria(body) {
   }
 
   const currencyId = await resolveCurrencyId(body);
-  if (currencyId) criteria.currency = currencyId;
+  if (currencyId !== undefined) criteria.currency = currencyId;
   applyDateRange(
     criteria,
     body.dateFrom || body.createdFrom,
@@ -103,9 +101,9 @@ async function resolveCurrencyId(body) {
   const id = CommonService.cleanString(body.currencyId);
   if (id) return id;
   const code = CommonService.cleanUpperString(body.currency);
-  if (!code) return "";
+  if (!code) return undefined;
   const currency = await Currency.findOne({ code: code });
-  return currency ? String(currency.id) : "__CURRENCY_NOT_FOUND__";
+  return currency ? String(currency.id) : null;
 }
 
 function buildEntryListItem(entry) {
@@ -142,17 +140,8 @@ function buildPocketDetail(id, pocket) {
   };
 }
 
-function normalizePaging(body, maxPageSize) {
-  const rawPage = Number(body.page);
-  const rawPageSize = Number(body.pageSize || body.limit);
-  const page =
-    Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
-  const requested =
-    Number.isFinite(rawPageSize) && rawPageSize > 0
-      ? Math.floor(rawPageSize)
-      : 20;
-  const pageSize = Math.min(requested, maxPageSize);
-  return { page: page, pageSize: pageSize, skip: (page - 1) * pageSize };
+function normalizePaging(body) {
+  return RequestQueryService.normalizePaging(body);
 }
 
 function normalizeSort(body) {

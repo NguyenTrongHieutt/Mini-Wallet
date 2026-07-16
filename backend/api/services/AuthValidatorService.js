@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   validateRegisterPayload: function (body) {
     const errors = [];
@@ -57,7 +59,11 @@ module.exports = {
       throw AppErrorService.create(EnvelopeService.CODE.UNAUTHORIZED, "UNAUTHENTICATED");
     }
 
-    if (["customer", "officer"].indexOf(user.userType) === -1) {
+    if (
+      [DOMAIN.userType.CUSTOMER, DOMAIN.userType.OFFICER].indexOf(
+        user.userType,
+      ) === -1
+    ) {
       throw AppErrorService.create(EnvelopeService.CODE.UNAUTHORIZED, "UNAUTHENTICATED");
     }
   },

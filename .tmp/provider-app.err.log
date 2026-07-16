@@ -1,7 +1,0 @@
-(node:9000) Warning: Accessing non-existent property 'padLevels' of module exports inside circular dependency
-(Use `node --trace-warnings ...` to show where the warning was created)
-[34mdebug: [39m-------------------------------------------------------
-[34mdebug: [39m:: Wed Jul 15 2026 16:20:55 GMT+0700 (Giờ Đông Dương)
-[34mdebug: [39mEnvironment : development
-[34mdebug: [39mPort        : 1337
-[34mdebug: [39m-------------------------------------------------------

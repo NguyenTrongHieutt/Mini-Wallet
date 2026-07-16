@@ -1,5 +1,6 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
-  MAX_PAGE_SIZE: 100,
   OFFICER_LOCK_PREFIX: "officer:",
 
   create: async function (body, officer) {
@@ -26,7 +27,7 @@ module.exports = {
       currency: currency.id,
       balance: values.balance,
       name: values.name,
-      status: "active",
+      status: DOMAIN.status.ACTIVE,
       createdBy: String(officer.id),
       updatedBy: String(officer.id),
     };
@@ -92,16 +93,16 @@ module.exports = {
     const pocket = await findPocket(body, false);
     const officerLock = module.exports.OFFICER_LOCK_PREFIX + String(officer.id);
 
-    if (targetStatus === "locked") {
-      if (pocket.status === "locked") {
+    if (targetStatus === DOMAIN.status.LOCKED) {
+      if (pocket.status === DOMAIN.status.LOCKED) {
         ensureOfficerLock(pocket);
         return { pocket: await populatePocketCurrency(pocket), changed: false };
       }
 
       const updated = await Pocket.update(
-        { id: pocket.id, status: "active" },
+        { id: pocket.id, status: DOMAIN.status.ACTIVE },
         {
-          status: "locked",
+          status: DOMAIN.status.LOCKED,
           lockedBy: officerLock,
           lockedAt: new Date(),
           lockExpiredAt: null,
@@ -116,15 +117,19 @@ module.exports = {
       );
     }
 
-    if (pocket.status === "active") {
+    if (pocket.status === DOMAIN.status.ACTIVE) {
       return { pocket: await populatePocketCurrency(pocket), changed: false };
     }
 
     ensureOfficerLock(pocket);
     const updated = await Pocket.update(
-      { id: pocket.id, status: "locked", lockedBy: pocket.lockedBy },
       {
-        status: "active",
+        id: pocket.id,
+        status: DOMAIN.status.LOCKED,
+        lockedBy: pocket.lockedBy,
+      },
+      {
+        status: DOMAIN.status.ACTIVE,
         lockedBy: null,
         lockedAt: null,
         lockExpiredAt: null,
@@ -144,7 +149,10 @@ function normalizeCreateInput(body) {
   const ownerType = CommonService.cleanString(body.ownerType).toLowerCase();
   const ownerId = CommonService.cleanString(body.ownerId);
   const name = CommonService.cleanString(body.name);
-  const currencyCode = CommonService.cleanUpperString(body.currency, "VND");
+  const currencyCode = CommonService.cleanUpperString(
+    body.currency,
+    MiniWalletConfigService.wallet().defaultCurrency,
+  );
   const balance =
     body.balance === undefined || body.balance === null ? 0 : body.balance;
 
@@ -154,7 +162,9 @@ function normalizeCreateInput(body) {
       "POCKET_OWNER_TYPE_REQUIRED",
     );
   }
-  if (["system", "bank"].indexOf(ownerType) === -1) {
+  if (
+    [DOMAIN.ownerType.SYSTEM, DOMAIN.ownerType.BANK].indexOf(ownerType) === -1
+  ) {
     throw AppErrorService.create(
       EnvelopeService.CODE.BAD_REQUEST,
       "POCKET_OWNER_TYPE_INVALID",
@@ -207,19 +217,7 @@ function normalizeCreateInput(body) {
 }
 
 function normalizePaging(body) {
-  const requestedPage = Number(body.page || 1);
-  const requestedPageSize = Number(body.pageSize || body.limit || 20);
-  const page = Number.isFinite(requestedPage)
-    ? Math.max(Math.floor(requestedPage), 1)
-    : 1;
-  const pageSize = Number.isFinite(requestedPageSize)
-    ? Math.min(
-        Math.max(Math.floor(requestedPageSize), 1),
-        module.exports.MAX_PAGE_SIZE,
-      )
-    : 20;
-
-  return { page: page, pageSize: pageSize, skip: (page - 1) * pageSize };
+  return RequestQueryService.normalizePaging(body);
 }
 
 async function buildCriteria(body) {
@@ -233,14 +231,22 @@ async function buildCriteria(body) {
 
   if (
     ownerType &&
-    ["customer", "provider", "system", "bank"].indexOf(ownerType) === -1
+    [
+      DOMAIN.ownerType.CUSTOMER,
+      DOMAIN.ownerType.PROVIDER,
+      DOMAIN.ownerType.SYSTEM,
+      DOMAIN.ownerType.BANK,
+    ].indexOf(ownerType) === -1
   ) {
     throw AppErrorService.create(
       EnvelopeService.CODE.BAD_REQUEST,
       "POCKET_FILTER_OWNER_TYPE_INVALID",
     );
   }
-  if (status && ["active", "locked"].indexOf(status) === -1) {
+  if (
+    status &&
+    [DOMAIN.status.ACTIVE, DOMAIN.status.LOCKED].indexOf(status) === -1
+  ) {
     throw AppErrorService.create(
       EnvelopeService.CODE.BAD_REQUEST,
       "POCKET_STATUS_INVALID",
@@ -342,7 +348,7 @@ async function finalizeStatusChange(
 
   const current = await Pocket.findOne({ id: pocketId });
   if (current && current.status === targetStatus) {
-    if (targetStatus === "locked") ensureOfficerLock(current);
+    if (targetStatus === DOMAIN.status.LOCKED) ensureOfficerLock(current);
     return { pocket: await populatePocketCurrency(current), changed: false };
   }
   throw AppErrorService.create(
@@ -371,7 +377,7 @@ function serializePocket(pocket, currency) {
         }
       : currency,
     status: pocket.status,
-    lock: pocket.status === "locked"
+    lock: pocket.status === DOMAIN.status.LOCKED
       ? {
           type:
             CommonService.cleanString(pocket.lockedBy).indexOf(

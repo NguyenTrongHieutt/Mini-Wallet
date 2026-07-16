@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { AlertCircle, ArrowRight, CheckCircle2, Play } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { appConfig } from '@/config/app-config'
 import { operationErrorMessage } from './api'
 import { JsonDetails } from './components'
 import { useTriggerTransaction } from './hooks'
@@ -13,7 +14,7 @@ const SERVICE_CODE = 'CASH_IN' as const
 export function TriggerTransactionPage() {
   const [customerPhone, setCustomerPhone] = useState('')
   const [amount, setAmount] = useState('50000')
-  const [currency, setCurrency] = useState('VND')
+  const [currency, setCurrency] = useState(appConfig.defaultCurrency)
   const [message, setMessage] = useState('Postman local cash-in')
   const [localError, setLocalError] = useState<string | null>(null)
   const trigger = useTriggerTransaction()
@@ -22,7 +23,7 @@ export function TriggerTransactionPage() {
     serviceCode: SERVICE_CODE,
     customerPhone: customerPhone.trim() || '*{{customerPhone}}*',
     amount: Number(amount) || 0,
-    currency: currency.trim().toUpperCase() || 'VND',
+    currency: currency.trim().toUpperCase() || appConfig.defaultCurrency,
     message: message.trim(),
   }), [amount, currency, customerPhone, message])
 
@@ -58,7 +59,7 @@ export function TriggerTransactionPage() {
       return
     }
 
-    if (!window.confirm(`Nạp ${payload.amount.toLocaleString('vi-VN')} ${payload.currency} cho khách hàng ${payload.customerPhone}?`)) return
+    if (!window.confirm(`Nạp ${payload.amount.toLocaleString(appConfig.locale)} ${payload.currency} cho khách hàng ${payload.customerPhone}?`)) return
     try {
       await trigger.mutateAsync(payload)
     } catch {
@@ -101,7 +102,7 @@ export function TriggerTransactionPage() {
 
         <label className="monitor-field">
           <span>Loại tiền <strong>*</strong></span>
-          <input required maxLength={3} value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase())} placeholder="VND"/>
+          <input required maxLength={3} value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase())} placeholder={appConfig.defaultCurrency}/>
         </label>
 
         <label className="monitor-field monitor-field--span-2">

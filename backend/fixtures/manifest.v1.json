@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "seeds": [
+    {
+      "id": "currencies",
+      "handler": "currencies",
+      "fixture": "currencies.v1.json"
+    },
+    {
+      "id": "officer",
+      "handler": "officer",
+      "fixture": "officer.v1.json"
+    },
+    {
+      "id": "p2p",
+      "handler": "service",
+      "fixture": "p2p-service.v1.json"
+    },
+    {
+      "id": "cash-in",
+      "handler": "service",
+      "fixture": "cash-in-service.v1.json"
+    }
+  ]
+}

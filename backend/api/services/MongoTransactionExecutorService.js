@@ -6,16 +6,59 @@ let client;
 
 module.exports = {
   getConnection: async function () {
-    const db = await getDb();
-    return {
-      client: client,
-      db: db,
-      collections: getLedgerCollections(db),
-      toObjectId: toObjectId,
-      normalizeId: normalizeId,
-    };
+    return createConnection();
+  },
+
+  withTransaction: async function (work) {
+    const connection = await createConnection();
+    const session = connection.client.startSession();
+    connection.session = session;
+    let result;
+
+    try {
+      await session.withTransaction(async function () {
+        result = await work(connection);
+      });
+      return result;
+    } finally {
+      await session.endSession();
+    }
+  },
+
+  isTransactionUnavailable: function (err) {
+    if (!err) {
+      return false;
+    }
+
+    const message = err.message || "";
+    return (
+      message.indexOf("Transaction numbers are only allowed") !== -1 ||
+      message.indexOf("replica set member or mongos") !== -1 ||
+      message.indexOf("Transaction is not supported") !== -1
+    );
+  },
+
+  close: async function () {
+    if (!client) {
+      return;
+    }
+
+    var currentClient = client;
+    client = null;
+    await currentClient.close();
   },
 };
+
+async function createConnection() {
+  const db = await getDb();
+  return {
+    client: client,
+    db: db,
+    collections: getLedgerCollections(db),
+    toObjectId: toObjectId,
+    normalizeId: normalizeId,
+  };
+}
 
 async function getDb() {
   if (!client) {
@@ -38,32 +81,23 @@ function getLedgerCollections(db) {
 }
 
 function getMongoUri() {
-  if (process.env.MONGO_URI) {
-    return process.env.MONGO_URI;
+  const databaseConfig = MiniWalletConfigService.get().database;
+  if (databaseConfig.uri) {
+    return databaseConfig.uri;
   }
 
-  const connection =
-    typeof sails !== "undefined" &&
-    sails &&
-    sails.config &&
-    sails.config.connections &&
-    sails.config.connections.mongo;
-  const host = process.env.MONGO_HOST || (connection && connection.host) || "127.0.0.1";
-  const port = process.env.MONGO_PORT || (connection && connection.port) || 27017;
-  const database = getMongoDatabase();
-
-  return "mongodb://" + host + ":" + port + "/" + database;
+  return (
+    "mongodb://" +
+    databaseConfig.host +
+    ":" +
+    databaseConfig.port +
+    "/" +
+    databaseConfig.name
+  );
 }
 
 function getMongoDatabase() {
-  const connection =
-    typeof sails !== "undefined" &&
-    sails &&
-    sails.config &&
-    sails.config.connections &&
-    sails.config.connections.mongo;
-
-  return process.env.MONGO_DATABASE || (connection && connection.database) || "mini_wallet";
+  return MiniWalletConfigService.get().database.name;
 }
 
 function toObjectId(value) {

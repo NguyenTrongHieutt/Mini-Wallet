@@ -15,8 +15,44 @@ describe("apiPost", () => {
   });
 
   it("throws ApiError when HTTP 200 contains a business error", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ err: 422, message: "INVALID_STATE", data: { reason: "locked" } }), { status: 200 })));
-    await expect(apiPost("/api/example")).rejects.toMatchObject({ name: "ApiError", code: 422, message: "INVALID_STATE" });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      err: 422,
+      code: "POCKET_LOCKED",
+      message: "INVALID_STATE",
+      data: { reason: "locked" },
+    }), { status: 200 })));
+    await expect(apiPost("/api/example")).rejects.toMatchObject({
+      name: "ApiError",
+      code: 422,
+      errorCode: "POCKET_LOCKED",
+      message: "INVALID_STATE",
+      data: { reason: "locked" },
+    });
+  });
+
+  it("keeps the optional envelope code non-breaking on successful responses", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      err: 200,
+      code: "CUSTOMER_LOADED",
+      message: "OK",
+      data: { id: "customer-1" },
+    }), { status: 200 })));
+
+    await expect(apiPost("/api/example")).resolves.toEqual({ id: "customer-1" });
+  });
+
+  it("accepts legacy error envelopes that omit data", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      err: 404,
+      code: "CUSTOMER_NOT_FOUND",
+      message: "Customer not found",
+    }), { status: 200 })));
+
+    await expect(apiPost("/api/example")).rejects.toMatchObject({
+      code: 404,
+      errorCode: "CUSTOMER_NOT_FOUND",
+      data: undefined,
+    });
   });
 
   it("notifies auth consumers for expired sessions", async () => {

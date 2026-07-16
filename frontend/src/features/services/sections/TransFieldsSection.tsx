@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { serviceApi } from '../api'
+import { serviceKeys } from '../serviceQueries'
 import type { Service, TransField } from '../types'
 
 type FieldForm = {
@@ -38,7 +39,7 @@ export function TransFieldsSection({ service, readOnly }: { service: Service; re
   const [form, setForm] = useState<FieldForm>(initial)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [formError, setFormError] = useState('')
-  const query = useQuery({ queryKey: ['serviceFields', service.id], queryFn: () => serviceApi.listFields(service.id) })
+  const query = useQuery({ queryKey: serviceKeys.fields(service.id), queryFn: () => serviceApi.listFields(service.id) })
   const reset = () => { setForm(initial); setEditingId(null); setFormError('') }
   const mutation = useMutation({
     mutationFn: () => {
@@ -64,9 +65,9 @@ export function TransFieldsSection({ service, readOnly }: { service: Service; re
         ? serviceApi.updateField(service.id, editingId, body)
         : serviceApi.insertField(service.id, body)
     },
-    onSuccess: () => { reset(); void client.invalidateQueries({ queryKey: ['serviceFields', service.id] }) },
+    onSuccess: () => { reset(); void client.invalidateQueries({ queryKey: serviceKeys.fields(service.id) }) },
   })
-  const toggle = useMutation({ mutationFn: (field: TransField) => serviceApi.updateField(service.id, field.id, { status: field.status === 'active' ? 'inactive' : 'active' }), onSuccess: () => client.invalidateQueries({ queryKey: ['serviceFields', service.id] }) })
+  const toggle = useMutation({ mutationFn: (field: TransField) => serviceApi.updateField(service.id, field.id, { status: field.status === 'active' ? 'inactive' : 'active' }), onSuccess: () => client.invalidateQueries({ queryKey: serviceKeys.fields(service.id) }) })
   const submit = (event: FormEvent) => { event.preventDefault(); setFormError(''); mutation.mutate() }
   const error = mutation.error instanceof Error ? mutation.error.message : formError
 

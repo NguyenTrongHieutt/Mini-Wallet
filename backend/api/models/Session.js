@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   attributes: {
     tokenHash: {
@@ -8,7 +10,7 @@ module.exports = {
     },
     userType: {
       type: 'string',
-      enum: ['customer', 'officer'],
+      enum: [DOMAIN.userType.CUSTOMER, DOMAIN.userType.OFFICER],
       required: true,
       index: true
     },
@@ -25,8 +27,12 @@ module.exports = {
     },
     status: {
       type: 'string',
-      enum: ['active', 'revoked', 'expired'],
-      defaultsTo: 'active',
+      enum: [
+        DOMAIN.status.ACTIVE,
+        DOMAIN.status.REVOKED,
+        DOMAIN.status.EXPIRED,
+      ],
+      defaultsTo: DOMAIN.status.ACTIVE,
       required: true,
       index: true
     },

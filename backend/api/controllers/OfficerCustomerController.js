@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   list: async function (req, res) {
     try {
@@ -30,7 +32,7 @@ module.exports = {
       const data = await OfficerCustomerService.changeStatus(
         req.body || {},
         req.info.user,
-        "locked",
+        DOMAIN.status.LOCKED,
       );
       return res.ok(EnvelopeService.CODE.OK, "CUSTOMER_LOCKED", data);
     } catch (err) {
@@ -43,7 +45,7 @@ module.exports = {
       const data = await OfficerCustomerService.changeStatus(
         req.body || {},
         req.info.user,
-        "active",
+        DOMAIN.status.ACTIVE,
       );
       return res.ok(EnvelopeService.CODE.OK, "CUSTOMER_UNLOCKED", data);
     } catch (err) {

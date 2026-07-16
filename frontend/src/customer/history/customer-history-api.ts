@@ -1,4 +1,5 @@
 import { ApiError, apiPost } from "@/lib/api";
+import { mappedErrorMessage } from "@/shared/error-message";
 import type {
   CustomerTransactionDetailData,
   CustomerTransactionListData,
@@ -22,6 +23,5 @@ export function customerHistoryErrorMessage(error: unknown): string {
     CUSTOMER_TRANSACTIONS_LIST_FAILED: "Không thể tải lịch sử giao dịch.",
     CUSTOMER_TRANSACTION_DETAIL_FAILED: "Không thể tải chi tiết giao dịch.",
   };
-  return messages[error.message] ?? error.message;
+  return mappedErrorMessage(error, messages, error.message);
 }
-

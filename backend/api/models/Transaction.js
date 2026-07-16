@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   attributes: {
     code: {
@@ -14,7 +16,7 @@ module.exports = {
     transRefId: {
       model: "transactiontrail",
       required: true,
-      index: true,
+      unique: true,
     },
     senderCustomer: {
       model: "customer",
@@ -47,8 +49,8 @@ module.exports = {
     },
     status: {
       type: "string",
-      enum: ["done", "failed"],
-      defaultsTo: "done",
+      enum: [DOMAIN.status.DONE, DOMAIN.status.FAILED],
+      defaultsTo: DOMAIN.status.DONE,
       required: true,
       index: true,
     },

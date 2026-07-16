@@ -389,6 +389,10 @@ components:
           type: integer
           example: 200
           description: Business response code. HTTP status is always 200.
+        code:
+          type: string
+          example: OK
+          description: Stable semantic response code for client-side handling.
         message:
           type: string
           example: OK

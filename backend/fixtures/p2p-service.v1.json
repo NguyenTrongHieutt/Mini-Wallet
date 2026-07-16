@@ -1,0 +1,208 @@
+{
+  "schemaVersion": 1,
+  "kind": "service",
+  "currencyCode": "VND",
+  "pocket": {
+    "ownerType": "system",
+    "ownerId": "SYSTEM_FEE",
+    "balance": 0,
+    "balancePolicy": "preserve",
+    "name": "System Fee Wallet",
+    "status": "active"
+  },
+  "service": {
+    "code": "P2P_TRANSFER",
+    "name": "P2P Transfer",
+    "description": "Transfer money from one customer wallet to another customer wallet.",
+    "fieldBuilder": [
+      {
+        "order": 1,
+        "name": "USERID",
+        "role": "sender customer id",
+        "rule": "mapping",
+        "source": "user",
+        "variable": "id",
+        "datatype": "string",
+        "errorCode": "USER_REQUIRED"
+      },
+      {
+        "order": 2,
+        "name": "SERVICECODE",
+        "role": "service code",
+        "rule": "fixed",
+        "source": "constant",
+        "value": "P2P_TRANSFER",
+        "datatype": "string",
+        "errorCode": "SERVICE_REQUIRED"
+      },
+      {
+        "order": 3,
+        "name": "RECEIVERPHONE",
+        "role": "receiver phone",
+        "rule": "mapping",
+        "source": "body",
+        "variable": "receiverPhone",
+        "datatype": "string",
+        "errorCode": "RECEIVER_PHONE_REQUIRED"
+      },
+      {
+        "order": 4,
+        "name": "AMOUNT",
+        "role": "transfer amount",
+        "rule": "mapping",
+        "source": "body",
+        "variable": "amount",
+        "datatype": "number",
+        "errorCode": "AMOUNT_REQUIRED"
+      },
+      {
+        "order": 5,
+        "name": "CURRENCY",
+        "role": "currency code",
+        "rule": "mapping",
+        "source": "body",
+        "variable": "currency",
+        "defaultValue": "VND",
+        "datatype": "string",
+        "errorCode": "CURRENCY_REQUIRED"
+      },
+      {
+        "order": 6,
+        "name": "SENDERID",
+        "role": "sender pocket id",
+        "rule": "query",
+        "source": "database",
+        "query": "Pocket.getActivePocketByOwner",
+        "params": [
+          { "source": "constant", "value": "customer" },
+          "USERID",
+          "CURRENCY"
+        ],
+        "output": "id",
+        "datatype": "string",
+        "errorCode": "SENDER_POCKET_NOT_FOUND"
+      },
+      {
+        "order": 7,
+        "name": "RECEIVERCUSTOMERID",
+        "role": "receiver customer id",
+        "rule": "query",
+        "source": "database",
+        "query": "Customer.getActiveCustomerByPhone",
+        "params": ["RECEIVERPHONE"],
+        "output": "id",
+        "datatype": "string",
+        "errorCode": "RECEIVER_NOT_FOUND"
+      },
+      {
+        "order": 8,
+        "name": "RECEIVERID",
+        "role": "receiver pocket id",
+        "rule": "query",
+        "source": "database",
+        "query": "Pocket.getActivePocketByOwner",
+        "params": [
+          { "source": "constant", "value": "customer" },
+          "RECEIVERCUSTOMERID",
+          "CURRENCY"
+        ],
+        "output": "id",
+        "datatype": "string",
+        "errorCode": "RECEIVER_POCKET_NOT_FOUND"
+      }
+    ],
+    "actions": {
+      "request": { "enabled": false },
+      "confirm": { "enabled": false },
+      "verify": { "enabled": false },
+      "preview": {
+        "fields": {
+          "input": {
+            "source": "object",
+            "fields": {
+              "receiverPhone": "RECEIVERPHONE"
+            }
+          }
+        }
+      }
+    },
+    "fee": {
+      "type": "fixed",
+      "value": 100,
+      "currency": "VND"
+    },
+    "auth": {
+      "method": "PIN"
+    },
+    "status": "active"
+  },
+  "transFields": [
+    {
+      "fieldName": "RECEIVERPHONE",
+      "fieldFormat": "string",
+      "minLength": 9,
+      "maxLength": 15,
+      "regex": "^\\+?[0-9]{9,15}$",
+      "isRequired": true,
+      "needSecured": false,
+      "order": 1,
+      "errorCode": "RECEIVER_PHONE_INVALID",
+      "status": "active"
+    },
+    {
+      "fieldName": "AMOUNT",
+      "fieldFormat": "number",
+      "minLength": 1,
+      "isRequired": true,
+      "needSecured": false,
+      "order": 2,
+      "errorCode": "AMOUNT_INVALID",
+      "status": "active"
+    },
+    {
+      "fieldName": "CURRENCY",
+      "fieldFormat": "string",
+      "minLength": 3,
+      "maxLength": 3,
+      "regex": "^[A-Z]{3}$",
+      "isRequired": false,
+      "needSecured": false,
+      "order": 3,
+      "errorCode": "CURRENCY_INVALID",
+      "status": "active"
+    }
+  ],
+  "transValidations": [
+    {
+      "validateFunc": "validateReceiverIsNotSender",
+      "validateFields": "SENDERID:RECEIVERID",
+      "order": 1,
+      "errorCode": "SELF_TRANSFER",
+      "status": "active"
+    },
+    {
+      "validateFunc": "validateSenderAccountSufficiency",
+      "validateFields": "SENDERID:AMOUNT:DEBITFEE",
+      "order": 2,
+      "errorCode": "INSUFFICIENT_BALANCE",
+      "status": "active"
+    }
+  ],
+  "definition": {
+    "glSteps": [
+      {
+        "order": 1,
+        "amount": "AMOUNT",
+        "debit": { "level": "productLevel", "target": "SENDERID" },
+        "credit": { "level": "productLevel", "target": "RECEIVERID" }
+      },
+      {
+        "order": 2,
+        "amount": "DEBITFEE",
+        "debit": { "level": "productLevel", "target": "SENDERID" },
+        "credit": { "level": "wallet", "target": "$SEED_POCKET_ID" }
+      }
+    ],
+    "status": "active"
+  }
+}

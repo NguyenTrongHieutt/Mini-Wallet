@@ -1,11 +1,10 @@
 const jwt = require('jsonwebtoken');
 
-const DEFAULT_EXPIRES_IN = '24h';
-
 module.exports = {
   sign: function(payload) {
+    const auth = MiniWalletConfigService.auth();
     return jwt.sign(payload, this.secret(), {
-      expiresIn: process.env.JWT_EXPIRES_IN || DEFAULT_EXPIRES_IN
+      expiresIn: auth.tokenTtlSeconds
     });
   },
 
@@ -14,6 +13,6 @@ module.exports = {
   },
 
   secret: function() {
-    return process.env.JWT_SECRET || 'mini-wallet-dev-secret';
+    return MiniWalletConfigService.auth().jwtSecret;
   }
 };

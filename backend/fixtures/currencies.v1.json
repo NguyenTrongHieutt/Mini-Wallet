@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "kind": "currencies",
+  "currencies": [
+    { "code": "VND", "name": "Vietnamese Dong", "minorUnit": 0, "status": "active" },
+    { "code": "USD", "name": "United States Dollar", "minorUnit": 2, "status": "active" },
+    { "code": "EUR", "name": "Euro", "minorUnit": 2, "status": "active" },
+    { "code": "JPY", "name": "Japanese Yen", "minorUnit": 0, "status": "active" },
+    { "code": "GBP", "name": "Pound Sterling", "minorUnit": 2, "status": "active" },
+    { "code": "CNY", "name": "Chinese Yuan", "minorUnit": 2, "status": "active" },
+    { "code": "KRW", "name": "South Korean Won", "minorUnit": 0, "status": "active" },
+    { "code": "SGD", "name": "Singapore Dollar", "minorUnit": 2, "status": "active" },
+    { "code": "THB", "name": "Thai Baht", "minorUnit": 2, "status": "active" }
+  ]
+}

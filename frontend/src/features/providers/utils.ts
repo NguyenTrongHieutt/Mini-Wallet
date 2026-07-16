@@ -1,3 +1,4 @@
+import { appConfig } from '@/config/app-config'
 import type { ProviderCurrency } from './types'
 
 export function formatDate(value?: string | number): string {
@@ -7,7 +8,7 @@ export function formatDate(value?: string | number): string {
     : new Date(value)
   return Number.isNaN(date.getTime())
     ? '—'
-    : new Intl.DateTimeFormat('vi-VN', { dateStyle: 'medium', timeStyle: 'short' }).format(date)
+    : new Intl.DateTimeFormat(appConfig.locale, { dateStyle: 'medium', timeStyle: 'short' }).format(date)
 }
 
 export function currencyCode(currency: ProviderCurrency | string): string {
@@ -19,14 +20,14 @@ export function formatBalance(balance: number, currency: ProviderCurrency | stri
   const minorUnit = typeof currency === 'string' ? 0 : (currency.minorUnit ?? 0)
   const amount = balance / 10 ** minorUnit
   try {
-    return new Intl.NumberFormat('vi-VN', {
+    return new Intl.NumberFormat(appConfig.locale, {
       style: 'currency',
       currency: code,
       minimumFractionDigits: minorUnit,
       maximumFractionDigits: minorUnit,
     }).format(amount)
   } catch {
-    return `${amount.toLocaleString('vi-VN')} ${code}`
+    return `${amount.toLocaleString(appConfig.locale)} ${code}`
   }
 }
 
@@ -35,4 +36,3 @@ export function compactFilters<T extends Record<string, unknown>>(filters: T): T
     Object.entries(filters).filter(([, value]) => value !== '' && value !== undefined),
   ) as T
 }
-

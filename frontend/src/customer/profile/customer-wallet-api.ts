@@ -1,4 +1,5 @@
 import { apiPost } from "@/lib/api";
+import { appConfig } from "@/config/app-config";
 import type { CustomerPocket } from "@/customer/types";
 
 export interface CustomerWalletBalanceData {
@@ -6,9 +7,8 @@ export interface CustomerWalletBalanceData {
 }
 
 export const customerWalletApi = {
-  balance: (currency = "VND") =>
+  balance: (currency = appConfig.defaultCurrency) =>
     apiPost<CustomerWalletBalanceData>("/api/v1/customer/wallet/balance", {
       currency: currency.toUpperCase(),
     }),
 };
-

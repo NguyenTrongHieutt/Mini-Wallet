@@ -32,7 +32,11 @@
     "seed:officer": "node scripts/seed-officer.js",
     "seed:p2p": "node scripts/seed-p2p-service.js",
     "seed:cash-in": "node scripts/seed-cash-in-service.js",
-    "start": "node app.js"
+    "seed:all": "node scripts/seed-all.js",
+    "start": "node app.js",
+    "test": "node test/run.js",
+    "test:integration": "node test/integration/live-smoke.js",
+    "test:syntax": "node test/syntax-check.js"
   },
   "main": "app.js",
   "repository": {

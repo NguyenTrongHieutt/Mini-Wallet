@@ -1,6 +1,6 @@
-module.exports = {
-  MAX_PAGE_SIZE: 100,
+var DOMAIN = require("../../config/domain").domain;
 
+module.exports = {
   listActiveServices: async function (body) {
     const paging = normalizePaging(body);
     const criteria = buildServiceCriteria(body);
@@ -75,7 +75,7 @@ module.exports = {
       );
     }
 
-    const service = await Service.loadActiveByCode(serviceCode);
+    const service = await ServiceRuntimeService.loadActiveByCode(serviceCode);
     const transFields = await loadTransFieldMap(service);
     const bodyFields = buildBodyFields(service, transFields);
 
@@ -98,7 +98,7 @@ module.exports = {
 
 function buildServiceCriteria(body) {
   const criteria = {
-    status: "active",
+    status: DOMAIN.status.ACTIVE,
   };
   const code = CommonService.cleanUpperString(body.code || body.serviceCode);
   const search = CommonService.cleanString(
@@ -123,7 +123,7 @@ function buildServiceCriteria(body) {
 function buildProviderCriteria(body, serviceCode) {
   const criteria = {
     serviceCode: serviceCode,
-    status: "active",
+    status: DOMAIN.status.ACTIVE,
   };
   const providerCode = CommonService.cleanUpperString(
     body.providerCode || body.code,
@@ -156,18 +156,7 @@ function buildProviderCriteria(body, serviceCode) {
 }
 
 function normalizePaging(body) {
-  const page = Math.max(Number(body.page || 1), 1);
-  const requestedPageSize = Number(body.pageSize || body.limit || 20);
-  const pageSize = Math.min(
-    Math.max(requestedPageSize || 20, 1),
-    module.exports.MAX_PAGE_SIZE,
-  );
-
-  return {
-    page: page,
-    pageSize: pageSize,
-    skip: (page - 1) * pageSize,
-  };
+  return RequestQueryService.normalizePaging(body);
 }
 
 function normalizeSort(body, allowed, defaultField) {
@@ -214,7 +203,7 @@ function buildPublicProvider(provider) {
 async function loadTransFieldMap(service) {
   const fields = await TransField.find({
     service: String(service.id),
-    status: "active",
+    status: DOMAIN.status.ACTIVE,
   });
   const map = {};
 
@@ -226,7 +215,9 @@ async function loadTransFieldMap(service) {
 }
 
 function buildBodyFields(service, transFields) {
-  const fieldBuilder = Service.sortByOrder(service.fieldBuilder || []);
+  const fieldBuilder = ServiceRuntimeService.sortByOrder(
+    service.fieldBuilder || [],
+  );
   const bodyFields = [];
   const seen = {};
 
@@ -273,7 +264,9 @@ function buildBodyField(builder, transField) {
 }
 
 function buildTransFields(service, transFields) {
-  const fieldBuilder = Service.sortByOrder(service.fieldBuilder || []);
+  const fieldBuilder = ServiceRuntimeService.sortByOrder(
+    service.fieldBuilder || [],
+  );
 
   return fieldBuilder.map(function (builder) {
     const transField = transFields[builder.name];
@@ -322,10 +315,10 @@ function exampleValue(field) {
 
   const dataType = CommonService.cleanString(field.dataType).toLowerCase();
   if (field.name.toLowerCase().indexOf("phone") !== -1) {
-    return "0900000000";
+    return "";
   }
   if (dataType === "number" || dataType === "integer" || dataType === "int") {
-    return 10000;
+    return 0;
   }
   if (dataType === "boolean" || dataType === "bool") {
     return true;

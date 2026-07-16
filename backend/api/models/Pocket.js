@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   attributes: {
     ownerId: {
@@ -8,7 +10,12 @@ module.exports = {
 
     ownerType: {
       type: "string",
-      enum: ["customer", "provider", "system", "bank"],
+      enum: [
+        DOMAIN.ownerType.CUSTOMER,
+        DOMAIN.ownerType.PROVIDER,
+        DOMAIN.ownerType.SYSTEM,
+        DOMAIN.ownerType.BANK,
+      ],
       required: true,
       index: true,
     },
@@ -31,8 +38,8 @@ module.exports = {
     },
     status: {
       type: "string",
-      enum: ["active", "locked"],
-      defaultsTo: "active",
+      enum: [DOMAIN.status.ACTIVE, DOMAIN.status.LOCKED],
+      defaultsTo: DOMAIN.status.ACTIVE,
       required: true,
     },
     lockedBy: {
@@ -51,7 +58,9 @@ module.exports = {
       type: "string",
     },
   },
-  LOCK_TTL_MS: 5 * 60 * 1000,
+  lockTtlMs: function () {
+    return MiniWalletConfigService.transactions().pocketLockTtlMs;
+  },
   getActivePocketByOwner: async function (ownerType, ownerId, currencyCode) {
     const currency = await Currency.loadActive(currencyCode);
     const pocket = await Pocket.findOne({
@@ -59,7 +68,7 @@ module.exports = {
       ownerId: String(ownerId),
       currency: currency.id,
     });
-    if (!pocket || pocket.status === "inactive") {
+    if (!pocket || pocket.status !== DOMAIN.status.ACTIVE) {
       return null;
     }
     return pocket;
@@ -75,38 +84,21 @@ module.exports = {
       );
     }
 
-    if (
-      pocket.status === "locked" &&
+    if (pocket.status === DOMAIN.status.LOCKED && isLockExpired(pocket)) {
+      await Pocket.releaseLockedPocket(pocket, pocket.lockedBy);
+      pocket.status = DOMAIN.status.ACTIVE;
+    } else if (
+      pocket.status === DOMAIN.status.LOCKED &&
       String(pocket.lockedBy) === String(transRefId)
     ) {
-      const now = new Date();
-      const updated = await Pocket.update(
-        { id: senderPocketId, status: "locked" },
-        {
-          status: "locked",
-          lockedBy: String(transRefId),
-          lockedAt: now,
-          lockExpiredAt: new Date(now.getTime() + this.LOCK_TTL_MS),
-          updatedBy: "engine",
-        },
+      throw AppErrorService.create(
+        EnvelopeService.CODE.INVALID_STATE,
+        "TRANSACTION_ALREADY_PROCESSING",
+        { pocketId: senderPocketId, transRefId: String(transRefId) },
       );
-
-      if (!updated || !updated[0]) {
-        throw AppErrorService.create(
-          EnvelopeService.CODE.INVALID_STATE,
-          "SENDER_POCKET_LOCK_FAILED",
-          { pocketId: senderPocketId },
-        );
-      }
-
-      return updated[0];
-    }
-    if (pocket.status === "locked" && isLockExpired(pocket)) {
-      await Pocket.releaseLockedPocket(pocket, pocket.lockedBy);
-      pocket.status = "active";
     }
 
-    if (pocket.status !== "active") {
+    if (pocket.status !== DOMAIN.status.ACTIVE) {
       throw AppErrorService.create(
         EnvelopeService.CODE.INVALID_STATE,
         "SENDER_POCKET_NOT_ACTIVE",
@@ -116,12 +108,12 @@ module.exports = {
 
     const now = new Date();
     const updated = await Pocket.update(
-      { id: senderPocketId, status: "active" },
+      { id: senderPocketId, status: DOMAIN.status.ACTIVE },
       {
-        status: "locked",
+        status: DOMAIN.status.LOCKED,
         lockedBy: String(transRefId),
         lockedAt: now,
-        lockExpiredAt: new Date(now.getTime() + this.LOCK_TTL_MS),
+        lockExpiredAt: new Date(now.getTime() + this.lockTtlMs()),
         updatedBy: "engine",
       },
     );
@@ -142,13 +134,13 @@ module.exports = {
       return null;
     }
 
-    const criteria = { id: pocket.id, status: "locked" };
+    const criteria = { id: pocket.id, status: DOMAIN.status.LOCKED };
     if (transRefId) {
       criteria.lockedBy = String(transRefId);
     }
 
     const updated = await Pocket.update(criteria, {
-      status: "active",
+      status: DOMAIN.status.ACTIVE,
       lockedBy: null,
       lockedAt: null,
       lockExpiredAt: null,

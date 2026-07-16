@@ -1,5 +1,6 @@
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
+import { appConfig } from "@/config/app-config";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +37,7 @@ export function CustomerTransactionDetailPage() {
   }
 
   const { transaction, trail, entries } = query.data;
-  const currency = transaction.currency?.code || "VND";
+  const currency = transaction.currency?.code || appConfig.defaultCurrency;
   return (
     <section>
       <div className="flex items-center justify-between gap-3">
@@ -133,4 +134,3 @@ function partyLabel(party?: CustomerTransactionParty | null) {
   if (party.type === "provider") return [party.name, party.code].filter(Boolean).join(" · ") || "Provider";
   return [party.displayName, party.phone].filter(Boolean).join(" · ") || "Customer";
 }
-

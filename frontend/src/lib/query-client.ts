@@ -1,9 +1,10 @@
 import { QueryClient } from "@tanstack/react-query";
+import { appConfig } from "@/config/app-config";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
+      staleTime: appConfig.query.staleTimeMs,
       refetchOnWindowFocus: false,
       retry: (failureCount, error) => {
         const code = error && typeof error === "object" && "code" in error ? Number(error.code) : 0;

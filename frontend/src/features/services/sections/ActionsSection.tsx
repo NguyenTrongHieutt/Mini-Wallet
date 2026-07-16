@@ -5,6 +5,7 @@ import { providerApi } from '../../providers/api/providerApi'
 import { providerKeys } from '../../providers/api/providerQueries'
 import type { ProviderFilters } from '../../providers/types'
 import { serviceApi } from '../api'
+import { serviceKeys } from '../serviceQueries'
 import type { ActionPhase, Service, ServiceActions } from '../types'
 import { JsonValueEditor } from './JsonValueEditor'
 import { SuggestionCombobox } from './SuggestionCombobox'
@@ -79,7 +80,7 @@ export function ActionsSection({ service, readOnly }: { service: Service; readOn
       if (rule && !rule.field.trim()) throw new Error(`Hãy nhập đường dẫn phản hồi cho successRule của ${phaseName}.`)
     }
     return serviceApi.updateActions(service.id, value)
-  }, onSuccess: ({ service: next }) => { client.setQueryData(['service', service.id], { service: next }); setActions(next.actions); setJson(JSON.stringify(next.actions, null, 2)) } })
+  }, onSuccess: ({ service: next }) => { client.setQueryData(serviceKeys.detail(service.id), { service: next }); setActions(next.actions); setJson(JSON.stringify(next.actions, null, 2)) } })
   const updatePhase = (name: 'request' | 'confirm' | 'verify', patch: Partial<ActionPhase>) => setActions((current) => ({ ...current, [name]: { ...(current[name] ?? emptyPhase(`${name}Url`)), ...patch } }))
   const saveJson = () => { try { const parsed: unknown = JSON.parse(json); if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') throw new Error('Actions phải là một đối tượng'); setJsonError(''); mutation.mutate(parsed as ServiceActions) } catch (error) { setJsonError(error instanceof Error ? error.message : 'JSON không hợp lệ') } }
   const toggleAdvanced = () => {

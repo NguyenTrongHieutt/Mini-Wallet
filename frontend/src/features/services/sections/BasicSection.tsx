@@ -1,13 +1,14 @@
 import { FormEvent, useEffect, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { serviceApi } from '../api'
+import { serviceKeys } from '../serviceQueries'
 import type { Service } from '../types'
 
 export function BasicSection({ service, readOnly }: { service: Service; readOnly: boolean }) {
   const client = useQueryClient()
   const [form, setForm] = useState({ name: service.name, description: service.description, feeType: service.fee.type, feeValue: String(service.fee.value), min: service.fee.min == null ? '' : String(service.fee.min), max: service.fee.max == null ? '' : String(service.fee.max), auth: service.auth.method })
   useEffect(() => setForm({ name: service.name, description: service.description, feeType: service.fee.type, feeValue: String(service.fee.value), min: service.fee.min == null ? '' : String(service.fee.min), max: service.fee.max == null ? '' : String(service.fee.max), auth: service.auth.method }), [service])
-  const mutation = useMutation({ mutationFn: () => serviceApi.update(service.id, { name: form.name.trim(), description: form.description.trim(), fee: { ...service.fee, type: form.feeType, value: Number(form.feeValue), min: form.min === '' ? undefined : Number(form.min), max: form.max === '' ? undefined : Number(form.max) }, auth: { ...service.auth, method: form.auth } }), onSuccess: () => client.invalidateQueries({ queryKey: ['service', service.id] }) })
+  const mutation = useMutation({ mutationFn: () => serviceApi.update(service.id, { name: form.name.trim(), description: form.description.trim(), fee: { ...service.fee, type: form.feeType, value: Number(form.feeValue), min: form.min === '' ? undefined : Number(form.min), max: form.max === '' ? undefined : Number(form.max) }, auth: { ...service.auth, method: form.auth } }), onSuccess: () => client.invalidateQueries({ queryKey: serviceKeys.detail(service.id) }) })
   const submit = (e: FormEvent) => { e.preventDefault(); mutation.mutate() }
   return <div className="section-stack"><header className="section-heading"><div><h2>Thông tin cơ bản</h2><p>Thông tin người vận hành nhìn thấy và chính sách phí/xác thực của dịch vụ.</p></div></header>
     <form className="panel form-stack" onSubmit={submit}>

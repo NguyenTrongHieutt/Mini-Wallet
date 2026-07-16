@@ -2,12 +2,13 @@ import { FormEvent, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { serviceApi } from './api'
+import { serviceKeys } from './serviceQueries'
 
 export function ServiceCreatePage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [form, setForm] = useState({ serviceCode: '', name: '', description: '', feeType: 'fixed', feeValue: '0', auth: 'NONE' })
-  const mutation = useMutation({ mutationFn: () => serviceApi.create({ serviceCode: form.serviceCode.trim().toUpperCase(), name: form.name.trim(), description: form.description.trim(), fee: { type: form.feeType, value: Number(form.feeValue) }, auth: { method: form.auth } }), onSuccess: ({ service }) => { queryClient.invalidateQueries({ queryKey: ['services'] }); navigate(`/services/${service.id}/config/field-builder`) } })
+  const mutation = useMutation({ mutationFn: () => serviceApi.create({ serviceCode: form.serviceCode.trim().toUpperCase(), name: form.name.trim(), description: form.description.trim(), fee: { type: form.feeType, value: Number(form.feeValue) }, auth: { method: form.auth } }), onSuccess: ({ service }) => { void queryClient.invalidateQueries({ queryKey: serviceKeys.lists() }); navigate(`/services/${service.id}/config/field-builder`) } })
   const submit = (event: FormEvent) => { event.preventDefault(); mutation.mutate() }
   return <section className="page-stack narrow"><header className="page-heading"><div><p className="eyebrow">Bước khởi đầu</p><h1>Tạo dịch vụ mới</h1><p>Chỉ cần thông tin nhận diện và chính sách phí. Các cấu hình còn lại sẽ được hướng dẫn theo từng bước.</p></div></header>
     <form className="panel form-stack" onSubmit={submit}>

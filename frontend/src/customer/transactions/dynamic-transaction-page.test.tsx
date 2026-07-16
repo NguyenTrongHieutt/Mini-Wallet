@@ -216,4 +216,102 @@ describe("dynamic customer transaction flow", () => {
     await waitFor(() => expect(verify).toHaveBeenCalledWith("trail-1", "123456"));
     expect(await screen.findByRole("heading", { name: "Giao dịch hoàn tất" })).toBeInTheDocument();
   });
+
+  it("locks duplicate requests and completes NONE verification without a PIN", async () => {
+    vi.spyOn(customerTransactionApi, "inputFields").mockResolvedValue(definition);
+    vi.spyOn(customerTransactionApi, "providers").mockResolvedValue({
+      items: [],
+      pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+    });
+    let resolveRequest: (preview: Awaited<ReturnType<typeof customerTransactionApi.request>>) => void =
+      () => undefined;
+    const request = vi.spyOn(customerTransactionApi, "request").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRequest = resolve;
+        }),
+    );
+    vi.spyOn(customerTransactionApi, "confirm").mockResolvedValue({
+      transRefId: "trail-none",
+      service: definition.service,
+      authMethod: "NONE",
+      status: "pending",
+      expiredAt: "2030-01-01T00:00:00.000Z",
+    });
+    const verify = vi.spyOn(customerTransactionApi, "verify").mockResolvedValue({
+      transRefId: "trail-none",
+      transaction: { id: "transaction-none", code: "TX-NONE", status: "done" },
+      service: definition.service,
+      amount: 20_000,
+      fee: 0,
+      totalAmount: 20_000,
+      currency: "VND",
+      status: "done",
+    });
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await user.type(await screen.findByPlaceholderText("Mã nhà cung cấp"), "EVN");
+    await user.type(screen.getByPlaceholderText("Số tiền thanh toán"), "20000");
+    const requestButton = screen.getByRole("button", { name: "Xem trước giao dịch" });
+    await user.dblClick(requestButton);
+
+    expect(request).toHaveBeenCalledTimes(1);
+    resolveRequest({
+      transRefId: "trail-none",
+      service: definition.service,
+      amount: 20_000,
+      fee: 0,
+      totalAmount: 20_000,
+      currency: "VND",
+      input: { providerCode: "EVN", amount: 20_000, currency: "VND" },
+      status: "draft",
+      expiredAt: "2030-01-01T00:00:00.000Z",
+    });
+
+    await user.click(await screen.findByRole("button", { name: "Xác nhận giao dịch" }));
+    expect(
+      await screen.findByText(/Dịch vụ không yêu cầu mã PIN/),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText("Mã PIN 6 chữ số")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Hoàn tất giao dịch" }));
+    await waitFor(() => expect(verify).toHaveBeenCalledWith("trail-none", undefined));
+  });
+
+  it("stops an expired preview and offers a clean restart", async () => {
+    vi.spyOn(customerTransactionApi, "inputFields").mockResolvedValue(definition);
+    vi.spyOn(customerTransactionApi, "providers").mockResolvedValue({
+      items: [],
+      pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+    });
+    vi.spyOn(customerTransactionApi, "request").mockResolvedValue({
+      transRefId: "trail-expired",
+      service: definition.service,
+      amount: 10_000,
+      fee: 0,
+      totalAmount: 10_000,
+      currency: "VND",
+      input: { providerCode: "EVN", amount: 10_000, currency: "VND" },
+      status: "draft",
+      expiredAt: "2000-01-01T00:00:00.000Z",
+    });
+    const confirm = vi.spyOn(customerTransactionApi, "confirm");
+    const user = userEvent.setup();
+
+    renderPage();
+
+    await user.type(await screen.findByPlaceholderText("Mã nhà cung cấp"), "EVN");
+    await user.type(screen.getByPlaceholderText("Số tiền thanh toán"), "10000");
+    await user.click(screen.getByRole("button", { name: "Xem trước giao dịch" }));
+
+    expect(await screen.findByText("Giao dịch đã hết hạn và không thể tiếp tục.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Xác nhận giao dịch" })).not.toBeInTheDocument();
+    expect(confirm).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Bắt đầu lại" }));
+    expect(await screen.findByRole("button", { name: "Xem trước giao dịch" })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Mã nhà cung cấp")).toHaveValue("");
+  });
 });

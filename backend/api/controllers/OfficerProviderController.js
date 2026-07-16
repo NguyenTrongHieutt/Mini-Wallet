@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   create: async function (req, res) {
     try {
@@ -58,16 +60,16 @@ module.exports = {
   },
 
   activate: async function (req, res) {
-    return changeStatus(req, res, "active");
+    return changeStatus(req, res, DOMAIN.status.ACTIVE);
   },
 
   deactivate: async function (req, res) {
-    return changeStatus(req, res, "inactive");
+    return changeStatus(req, res, DOMAIN.status.INACTIVE);
   },
 };
 
 async function changeStatus(req, res, targetStatus) {
-  const isActive = targetStatus === "active";
+  const isActive = targetStatus === DOMAIN.status.ACTIVE;
   try {
     const data = await OfficerProviderService.changeStatus(
       req.body || {},

@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   attributes: {
     serviceId: {
@@ -23,8 +25,15 @@ module.exports = {
     },
     status: {
       type: "string",
-      enum: ["init", "draft", "pending", "done", "failed", "cancelled"],
-      defaultsTo: "init",
+      enum: [
+        DOMAIN.status.INIT,
+        DOMAIN.status.DRAFT,
+        DOMAIN.status.PENDING,
+        DOMAIN.status.DONE,
+        DOMAIN.status.FAILED,
+        DOMAIN.status.CANCELLED,
+      ],
+      defaultsTo: DOMAIN.status.INIT,
       required: true,
       index: true,
     },
@@ -55,7 +64,9 @@ module.exports = {
     },
   },
 
-  TRAIL_TTL_MS: 15 * 60 * 1000,
+  trailTtlMs: function () {
+    return MiniWalletConfigService.transactions().trailTtlMs;
+  },
 
   buildMessage: async function (transInput) {
     if (Number(transInput.TRANSTEP) === NeonMessageService.STEP.REQUEST) {
@@ -82,7 +93,7 @@ module.exports = {
       this.validateTrailOwner(trail, transInput);
       this.validateTrailExpiry(trail);
 
-      if (trail.status !== "draft") {
+      if (trail.status !== DOMAIN.status.DRAFT) {
         throw AppErrorService.create(
           EnvelopeService.CODE.INVALID_STATE,
           "TRANSACTION_TRAIL_NOT_EDITABLE",
@@ -99,7 +110,9 @@ module.exports = {
         );
       }
 
-      const service = await Service.loadActiveById(trail.serviceId);
+      const service = await ServiceRuntimeService.loadActiveById(
+        trail.serviceId,
+      );
       if (
         String(service.id) !== String(trail.serviceId) ||
         CommonService.cleanUpperString(service.code) !== serviceCode
@@ -117,17 +130,23 @@ module.exports = {
       };
     }
 
-    const service = await Service.loadActiveByCode(transInput.body.serviceCode);
+    const service = await ServiceRuntimeService.loadActiveByCode(
+      transInput.body.serviceCode,
+    );
     const trail = await TransactionTrail.create({
       serviceId: service.id,
       customerId:
-        transInput.userType === "customer" ? transInput.user.id : undefined,
+        transInput.userType === DOMAIN.userType.CUSTOMER
+          ? transInput.user.id
+          : undefined,
       officerId:
-        transInput.userType === "officer" ? transInput.user.id : undefined,
+        transInput.userType === DOMAIN.userType.OFFICER
+          ? transInput.user.id
+          : undefined,
       inputMessage: {},
       outputMessage: {},
-      status: "init",
-      expiredAt: new Date(Date.now() + this.TRAIL_TTL_MS),
+      status: DOMAIN.status.INIT,
+      expiredAt: new Date(Date.now() + this.trailTtlMs()),
       createdBy: String(transInput.user.id),
       updatedBy: String(transInput.user.id),
     });
@@ -162,12 +181,12 @@ module.exports = {
 
     const expectedStatus =
       Number(transInput.TRANSTEP) === NeonMessageService.STEP.CONFIRM
-        ? "draft"
-        : "pending";
+        ? DOMAIN.status.DRAFT
+        : DOMAIN.status.PENDING;
     if (trail.status !== expectedStatus) {
       throw AppErrorService.create(
         EnvelopeService.CODE.INVALID_STATE,
-        expectedStatus === "draft"
+        expectedStatus === DOMAIN.status.DRAFT
           ? "TRANSACTION_TRAIL_NOT_DRAFT"
           : "TRANSACTION_TRAIL_NOT_PENDING",
       );
@@ -181,13 +200,16 @@ module.exports = {
   },
 
   updateDraft: async function (trail, transInput, transBody) {
-    const expectedStatus = trail.status === "init" ? "init" : "draft";
+    const expectedStatus =
+      trail.status === DOMAIN.status.INIT
+        ? DOMAIN.status.INIT
+        : DOMAIN.status.DRAFT;
     const updated = await TransactionTrail.update(
       { id: trail.id, status: expectedStatus },
       {
         inputMessage: this.buildInputMessage(trail.inputMessage, transInput),
         outputMessage: { TRANSBODY: transBody },
-        status: "draft",
+        status: DOMAIN.status.DRAFT,
         updatedBy: transBody.USERID || transBody.OFFICERID,
       },
     );
@@ -204,9 +226,9 @@ module.exports = {
 
   lockPending: async function (trail, transBody) {
     const updated = await TransactionTrail.update(
-      { id: trail.id, status: "draft" },
+      { id: trail.id, status: DOMAIN.status.DRAFT },
       {
-        status: "pending",
+        status: DOMAIN.status.PENDING,
         updatedBy: transBody.USERID || transBody.OFFICERID,
       },
     );
@@ -223,7 +245,7 @@ module.exports = {
 
   updatePendingOutput: async function (trail, transBody) {
     const updated = await TransactionTrail.update(
-      { id: trail.id, status: "pending" },
+      { id: trail.id, status: DOMAIN.status.PENDING },
       {
         outputMessage: { TRANSBODY: transBody },
         updatedBy: transBody.USERID || transBody.OFFICERID,
@@ -242,10 +264,10 @@ module.exports = {
 
   markDone: async function (trail, transBody) {
     const updated = await TransactionTrail.update(
-      { id: trail.id, status: "pending" },
+      { id: trail.id, status: DOMAIN.status.PENDING },
       {
         outputMessage: { TRANSBODY: transBody },
-        status: "done",
+        status: DOMAIN.status.DONE,
         updatedBy: transBody.USERID || transBody.OFFICERID,
       },
     );
@@ -283,7 +305,7 @@ module.exports = {
       );
     }
 
-    if (trail.status !== "pending") {
+    if (trail.status !== DOMAIN.status.PENDING) {
       throw AppErrorService.create(
         EnvelopeService.CODE.INVALID_STATE,
         "TRANSACTION_TRAIL_NOT_PENDING",
@@ -310,14 +332,14 @@ module.exports = {
 
     const userId = String(transInput.user.id);
     if (
-      transInput.userType === "customer" &&
+      transInput.userType === DOMAIN.userType.CUSTOMER &&
       String(trail.customerId) === userId
     ) {
       return;
     }
 
     if (
-      transInput.userType === "officer" &&
+      transInput.userType === DOMAIN.userType.OFFICER &&
       String(trail.officerId) === userId
     ) {
       return;
@@ -342,7 +364,7 @@ module.exports = {
     await TransactionTrail.update(
       criteria,
       {
-        status: "failed",
+        status: DOMAIN.status.FAILED,
         errorCode:
           err && err.messageKey ? err.messageKey : "TRANSACTION_REQUEST_FAILED",
         errorMessage:

@@ -1,3 +1,5 @@
+var DOMAIN = require("../../config/domain").domain;
+
 module.exports = {
   attributes: {
     code: {
@@ -17,8 +19,8 @@ module.exports = {
     },
     status: {
       type: "string",
-      enum: ["active", "inactive"],
-      defaultsTo: "active",
+      enum: [DOMAIN.status.ACTIVE, DOMAIN.status.INACTIVE],
+      defaultsTo: DOMAIN.status.ACTIVE,
       required: true,
       index: true,
     },
@@ -31,7 +33,11 @@ module.exports = {
   },
 
   loadActive: async function (currencyCode) {
-    const currency = await Currency.findOne({ code: currencyCode || "VND", status: "active" });
+    const config = MiniWalletConfigService.wallet();
+    const currency = await Currency.findOne({
+      code: currencyCode || config.defaultCurrency,
+      status: DOMAIN.status.ACTIVE,
+    });
     if (!currency) {
       throw AppErrorService.create(EnvelopeService.CODE.NOT_FOUND, "CURRENCY_NOT_FOUND");
     }

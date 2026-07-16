@@ -5,10 +5,11 @@ import { providerErrorMessage } from '../api/providerApi'
 import { ConfirmProviderStatusDialog } from '../components/ConfirmProviderStatusDialog'
 import { ProviderErrorState, ProviderLoading, ProviderPage } from '../components/ProviderPage'
 import { ProviderStatusBadge } from '../components/ProviderStatusBadge'
+import { appConfig } from '@/config/app-config'
+import { formatNumber } from '@/shared/formatters'
+import { paginationFromSearch } from '@/shared/url-query'
 import type { Provider, ProviderFilters, ProviderSortField, ProviderStatus } from '../types'
 import { formatDate } from '../utils'
-
-const DEFAULT_PAGE_SIZE = 20
 
 export function ProviderListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -26,7 +27,7 @@ export function ProviderListPage() {
   function clearFilters() {
     const empty = { q: '', serviceCode: '', providerCode: '', type: '', category: '', status: '' }
     setDraft(empty)
-    setSearchParams({ page: '1', pageSize: String(DEFAULT_PAGE_SIZE) })
+    setSearchParams({ page: '1', pageSize: String(appConfig.pagination.defaultPageSize) })
   }
 
   function changeSort(sortBy: ProviderSortField) {
@@ -85,7 +86,7 @@ export function ProviderListPage() {
       {result && (
         <section className="provider-card provider-list-card">
           <div className="provider-list-card__summary">
-            <strong>{result.pagination.total.toLocaleString('vi-VN')} Provider</strong>
+            <strong>{formatNumber(result.pagination.total)} Provider</strong>
             <label>
               Hiển thị
               <select
@@ -164,9 +165,9 @@ function filtersFromSearch(params: URLSearchParams): ProviderFilters {
   const status = params.get('status')
   const sortOrder = params.get('sortOrder')
   const normalizedStatus: ProviderStatus | undefined = status === 'active' || status === 'inactive' ? status : undefined
+  const pagination = paginationFromSearch(params)
   return {
-    page: Math.max(Number(params.get('page')) || 1, 1),
-    pageSize: Math.min(Math.max(Number(params.get('pageSize')) || DEFAULT_PAGE_SIZE, 1), 100),
+    ...pagination,
     q: params.get('q') || undefined,
     serviceCode: params.get('serviceCode') || undefined,
     providerCode: params.get('providerCode') || undefined,

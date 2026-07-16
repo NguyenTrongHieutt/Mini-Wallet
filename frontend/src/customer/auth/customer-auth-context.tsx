@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, type PropsWithChildren } from "react";
+import { appConfig } from "@/config/app-config";
 import { customerAuthApi, customerKeys } from "@/customer/api/customer-auth-api";
 import type {
   Customer,
@@ -55,7 +56,7 @@ export function CustomerAuthProvider({ children }: PropsWithChildren) {
     mutationFn: customerAuthApi.register,
     onSuccess: (data) => {
       queryClient.setQueryData(customerKeys.session, data.customer);
-      queryClient.setQueryData(customerKeys.wallet("VND"), data.pocket);
+      queryClient.setQueryData(customerKeys.wallet(appConfig.defaultCurrency), data.pocket);
     },
   });
 

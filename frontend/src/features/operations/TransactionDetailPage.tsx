@@ -1,5 +1,6 @@
 import { AlertCircle, ArrowLeft, ExternalLink, ReceiptText, RefreshCw, Users } from 'lucide-react'
 import { Link, useLocation, useParams } from 'react-router-dom'
+import { appConfig } from '@/config/app-config'
 import { operationErrorMessage } from './api'
 import { DetailItem, JsonDetails, StatusBadge } from './components'
 import { useTransaction } from './hooks'
@@ -14,7 +15,7 @@ export function TransactionDetailPage() {
   if (query.isLoading) return <main className="monitor-page"><section className="monitor-panel monitor-state"><span className="monitor-spinner" /><h2>Đang tải giao dịch</h2></section></main>
   if (query.isError || !query.data) return <main className="monitor-page"><Link className="monitor-link-button monitor-link-button--secondary" to={back}><ArrowLeft size={17} /> Danh sách giao dịch</Link><section className="monitor-panel monitor-state" style={{ marginTop: 18 }}><AlertCircle size={34} /><h2>Không mở được giao dịch</h2><p>{operationErrorMessage(query.error)}</p><button className="monitor-button monitor-button--secondary" onClick={() => query.refetch()}>Thử lại</button></section></main>
   const item = query.data
-  const currency = item.currency?.code ?? 'VND'
+  const currency = item.currency?.code ?? appConfig.defaultCurrency
   return <main className="monitor-page">
     <header className="monitor-header"><div><Link className="monitor-link-button monitor-link-button--secondary" to={back}><ArrowLeft size={17} /> Danh sách giao dịch</Link><p className="monitor-eyebrow" style={{ marginTop: 18 }}>Chi tiết giao dịch</p><h1 className="monitor-title">{item.code}</h1><p className="monitor-subtitle">TransRef ID: {item.transRefId}</p></div><div className="monitor-header__actions"><StatusBadge status={item.status} /><button className="monitor-button monitor-button--secondary" onClick={() => query.refetch()}><RefreshCw size={17} /> Làm mới</button></div></header>
     <div className="monitor-detail-layout"><section className="monitor-panel">

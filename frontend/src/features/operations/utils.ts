@@ -1,15 +1,21 @@
+import { appConfig } from '@/config/app-config'
+
 export function formatDate(value?: string | null): string {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'medium' }).format(date)
+  return new Intl.DateTimeFormat(appConfig.locale, { dateStyle: 'short', timeStyle: 'medium' }).format(date)
 }
 
-export function formatAmount(value: number, currency = 'VND'): string {
+export function formatAmount(value: number, currency = appConfig.defaultCurrency): string {
   try {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency, maximumFractionDigits: currency === 'VND' ? 0 : 2 }).format(value)
+    return new Intl.NumberFormat(appConfig.locale, {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: currency === appConfig.defaultCurrency ? 0 : 2,
+    }).format(value)
   } catch {
-    return new Intl.NumberFormat('vi-VN').format(value)
+    return new Intl.NumberFormat(appConfig.locale).format(value)
   }
 }
 

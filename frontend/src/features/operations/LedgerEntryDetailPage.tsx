@@ -1,5 +1,6 @@
 import { AlertCircle, ArrowLeft, ExternalLink, RefreshCw, Scale, WalletCards } from 'lucide-react'
 import { Link, useLocation, useParams } from 'react-router-dom'
+import { appConfig } from '@/config/app-config'
 import { operationErrorMessage } from './api'
 import { DetailItem, JsonDetails, StatusBadge } from './components'
 import { useLedgerEntry } from './hooks'
@@ -20,7 +21,7 @@ export function LedgerEntryDetailPage() {
   if (query.isLoading) return <main className="monitor-page"><section className="monitor-panel monitor-state"><span className="monitor-spinner" /><h2>Đang tải bút toán</h2></section></main>
   if (query.isError || !query.data) return <main className="monitor-page"><Link className="monitor-link-button monitor-link-button--secondary" to={back}><ArrowLeft size={17} /> Danh sách bút toán</Link><section className="monitor-panel monitor-state" style={{ marginTop: 18 }}><AlertCircle size={34} /><h2>Không mở được bút toán</h2><p>{operationErrorMessage(query.error)}</p><button className="monitor-button monitor-button--secondary" onClick={() => query.refetch()}>Thử lại</button></section></main>
   const entry = query.data
-  const currency = entry.currency?.code ?? 'VND'
+  const currency = entry.currency?.code ?? appConfig.defaultCurrency
   return <main className="monitor-page">
     <header className="monitor-header"><div><Link className="monitor-link-button monitor-link-button--secondary" to={back}><ArrowLeft size={17} /> Danh sách bút toán</Link><p className="monitor-eyebrow" style={{ marginTop: 18 }}>Chi tiết bút toán</p><h1 className="monitor-title">Bước #{entry.stepOrder}</h1><p className="monitor-subtitle">TransRef ID: {entry.transRefId}</p></div><div className="monitor-header__actions"><StatusBadge status={entry.status} /><button className="monitor-button monitor-button--secondary" onClick={() => query.refetch()}><RefreshCw size={17} /> Làm mới</button></div></header>
     <div className="monitor-detail-layout"><section className="monitor-panel">

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { customerKeys } from '@/features/customers/api/customerQueries'
 import { pocketApi } from './pocketApi'
 import type { CreatePocketInput, PocketFilters, PocketStatus } from '../types'
 
@@ -47,7 +48,7 @@ export function useChangePocketStatus() {
       queryClient.setQueryData(pocketKeys.detail(result.pocket.id), result)
       void queryClient.invalidateQueries({ queryKey: pocketKeys.lists() })
       // Customer detail embeds pocket summaries.
-      void queryClient.invalidateQueries({ queryKey: ['customers', 'detail'] })
+      void queryClient.invalidateQueries({ queryKey: customerKeys.details() })
     },
   })
 }

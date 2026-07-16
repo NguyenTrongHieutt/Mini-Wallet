@@ -6,16 +6,13 @@ import { useChangePocketStatus, usePockets } from '../api/pocketQueries'
 import { OperationsPagination } from '../components/OperationsPagination'
 import { PocketStatusBadge } from '../components/PocketStatusBadge'
 import { currencyCode, formatDate, formatMoney, isTransactionLocked, OWNER_LABELS } from '../utils'
+import { appConfig } from '@/config/app-config'
+import { paginationFromSearch } from '@/shared/url-query'
 import type { Pocket, PocketFilters, PocketOwnerType, PocketSortField } from '../types'
 import '../operations.css'
 
 const VALID_OWNER_TYPES: PocketOwnerType[] = ['customer', 'provider', 'system', 'bank']
 const VALID_SORTS: PocketSortField[] = ['name', 'ownerType', 'ownerId', 'balance', 'status', 'createdAt', 'updatedAt']
-
-function positiveNumber(value: string | null, fallback: number): number {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback
-}
 
 export function PocketListPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -28,9 +25,9 @@ export function PocketListPage() {
     const ownerType = searchParams.get('ownerType') as PocketOwnerType | null
     const status = searchParams.get('status')
     const sortBy = searchParams.get('sortBy') as PocketSortField | null
+    const pagination = paginationFromSearch(searchParams)
     return {
-      page: positiveNumber(searchParams.get('page'), 1),
-      pageSize: Math.min(positiveNumber(searchParams.get('pageSize'), 20), 100),
+      ...pagination,
       q: q || undefined,
       ownerType: ownerType && VALID_OWNER_TYPES.includes(ownerType) ? ownerType : undefined,
       status: status === 'active' || status === 'locked' ? status : undefined,
@@ -93,7 +90,7 @@ export function PocketListPage() {
           <label className="ops-field"><span>Tìm kiếm</span><span className="ops-search-wrap"><Search size={17} /><input value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} placeholder="Tên ví hoặc mã chủ sở hữu" /></span></label>
           <label className="ops-field"><span>Loại chủ sở hữu</span><select value={filters.ownerType ?? ''} onChange={(event) => updateFilters({ ownerType: event.target.value })}><option value="">Tất cả</option>{VALID_OWNER_TYPES.map((type) => <option value={type} key={type}>{OWNER_LABELS[type]}</option>)}</select></label>
           <label className="ops-field"><span>Trạng thái</span><select value={filters.status ?? ''} onChange={(event) => updateFilters({ status: event.target.value })}><option value="">Tất cả</option><option value="active">Hoạt động</option><option value="locked">Đã khóa</option></select></label>
-          <label className="ops-field"><span>Tiền tệ</span><input value={currencyDraft} maxLength={3} onChange={(event) => setCurrencyDraft(event.target.value.toUpperCase().replace(/[^A-Z]/g, ''))} placeholder="VND" /></label>
+          <label className="ops-field"><span>Tiền tệ</span><input value={currencyDraft} maxLength={3} onChange={(event) => setCurrencyDraft(event.target.value.toUpperCase().replace(/[^A-Z]/g, ''))} placeholder={appConfig.defaultCurrency} /></label>
           <div className="ops-filter-actions"><button className="ops-button ops-button--primary" type="submit">Áp dụng</button><button className="ops-button ops-button--secondary" type="button" onClick={() => { setSearchDraft(''); setCurrencyDraft(''); setSearchParams(new URLSearchParams()) }}>Xóa lọc</button></div>
         </div>
         <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>

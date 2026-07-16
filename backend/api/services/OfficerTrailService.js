@@ -1,9 +1,7 @@
 module.exports = {
-  MAX_PAGE_SIZE: 100,
-
   list: async function (body) {
     body = CommonService.isPlainObject(body) ? body : {};
-    const paging = normalizePaging(body, this.MAX_PAGE_SIZE);
+    const paging = normalizePaging(body);
     const criteria = await buildCriteria(body);
     const sort = normalizeSort(body);
 
@@ -12,11 +10,10 @@ module.exports = {
       .sort(sort)
       .skip(paging.skip)
       .limit(paging.pageSize);
-
-    const items = [];
-    for (let i = 0; i < trails.length; i += 1) {
-      items.push(await buildTrail(trails[i], false));
-    }
+    const serviceMap = await loadServiceMap(trails);
+    const items = trails.map(function (trail) {
+      return buildTrail(trail, false, serviceMap[String(trail.serviceId)]);
+    });
 
     return {
       items: items,
@@ -43,7 +40,8 @@ module.exports = {
       );
     }
 
-    return { trail: await buildTrail(trail, true) };
+    const service = await Service.findOne({ id: trail.serviceId });
+    return { trail: buildTrail(trail, true, service) };
   },
 };
 
@@ -58,7 +56,7 @@ async function buildCriteria(body) {
   if (officerId) criteria.officerId = officerId;
 
   const serviceId = await resolveServiceId(body);
-  if (serviceId) criteria.serviceId = serviceId;
+  if (serviceId !== undefined) criteria.serviceId = serviceId;
 
   applyDateRange(
     criteria,
@@ -79,13 +77,12 @@ async function resolveServiceId(body) {
   const serviceId = CommonService.cleanString(body.serviceId);
   if (serviceId) return serviceId;
   const serviceCode = CommonService.cleanUpperString(body.serviceCode);
-  if (!serviceCode) return "";
+  if (!serviceCode) return undefined;
   const service = await Service.findOne({ code: serviceCode });
-  return service ? String(service.id) : "__SERVICE_NOT_FOUND__";
+  return service ? String(service.id) : null;
 }
 
-async function buildTrail(trail, includeOutputMessage) {
-  const service = await Service.findOne({ id: trail.serviceId });
+function buildTrail(trail, includeOutputMessage, service) {
   const item = {
     id: String(trail.id),
     service: service
@@ -113,26 +110,35 @@ async function buildTrail(trail, includeOutputMessage) {
   return item;
 }
 
-function normalizePaging(body, maxPageSize) {
-  const rawPage = Number(body.page);
-  const rawPageSize = Number(body.pageSize || body.limit);
-  const page =
-    Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
-  const requested =
-    Number.isFinite(rawPageSize) && rawPageSize > 0
-      ? Math.floor(rawPageSize)
-      : 20;
-  const pageSize = Math.min(requested, maxPageSize);
-  return { page: page, pageSize: pageSize, skip: (page - 1) * pageSize };
+async function loadServiceMap(trails) {
+  const ids = [];
+  const seen = {};
+
+  for (let i = 0; i < trails.length; i += 1) {
+    const id = String(trails[i].serviceId);
+    if (!seen[id]) {
+      seen[id] = true;
+      ids.push(id);
+    }
+  }
+
+  if (!ids.length) {
+    return {};
+  }
+
+  const services = await Service.find({ id: ids });
+  return services.reduce(function (map, service) {
+    map[String(service.id)] = service;
+    return map;
+  }, {});
+}
+
+function normalizePaging(body) {
+  return RequestQueryService.normalizePaging(body);
 }
 
 function paginationResult(paging, total) {
-  return {
-    page: paging.page,
-    pageSize: paging.pageSize,
-    total: total,
-    totalPages: Math.ceil(total / paging.pageSize),
-  };
+  return RequestQueryService.pagination(paging, total);
 }
 
 function normalizeSort(body) {

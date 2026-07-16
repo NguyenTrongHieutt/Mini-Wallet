@@ -1,46 +1,53 @@
-# Mini-Wallet Officer Portal
+# Mini-Wallet Portal
 
-React/TypeScript portal dành cho Officer quản lý Service, Provider, Customer, Pocket và theo dõi giao dịch.
+Ứng dụng React/TypeScript chứa cả Officer Portal và Customer Portal.
 
 ## Yêu cầu
 
-- Node.js 22 trở lên cho frontend (`.nvmrc` đã đặt là `22`).
-- Backend Sails đang chạy tại `http://localhost:1337`.
-- Backend có thể tiếp tục dùng Node.js cũ riêng; không dùng chung runtime với frontend.
+$env:PATH = "C:\Tools\node-v22.23.1-win-x64;$env:PATH"
+cd D:\Intern-JITS\Mini-Wallet\frontend
+npm run dev
+
+- Frontend sử dụng Node.js 22 theo `.nvmrc`.
+- Backend Sails chạy riêng, mặc định tại `http://localhost:1337`.
+- Không dùng runtime Node 8 của backend để chạy lệnh frontend.
 
 ## Chạy local
 
 ```powershell
-cd "frontend Mini-Wallet"
+cd frontend
 nvm use 22
 npm install
 npm run dev
 ```
 
-Vite chạy tại `http://localhost:5173` và proxy `/api` sang backend. Tài khoản seed mặc định:
+Vite chạy tại `http://localhost:5173` và proxy `/api` sang backend. Có thể sao
+chép `.env.example` thành `.env` và đặt `VITE_API_BASE_URL` khi backend nằm ở
+địa chỉ khác.
 
-```text
-phone: 0900000000
-password: Officer123
-```
-
-Có thể đặt backend khác bằng cách sao chép `.env.example` thành `.env` và thay `VITE_API_BASE_URL`.
+Tài khoản Officer không còn được hardcode. Hãy cấu hình `OFFICER_PHONE` và
+`OFFICER_PASSWORD` khi chạy seed phía backend.
 
 ## Kiểm tra
 
 ```powershell
+npm run contract:check
 npm run typecheck
 npm run lint
 npm test
 npm run build
+npm run test:e2e
 ```
+
+`backend/docs/API/customer-openapi.yaml` là nguồn contract Customer chính.
+Lệnh `contract:check` bảo đảm bản sao dùng bởi frontend không bị lệch.
 
 ## Các khu vực chính
 
-- `/services`: wizard cấu hình và publish Service.
-- `/providers`: quản lý Provider độc lập.
-- `/customers` và `/pockets`: quản lý khách hàng, ví và trạng thái khóa.
-- `/operations/trigger`: chạy giao dịch Officer.
-- `/trails`, `/transactions`, `/ledger/entries`: giám sát và đối soát.
+- `/services`, `/providers`, `/customers`, `/pockets`: vận hành cấu hình và dữ liệu.
+- `/operations/trigger`, `/transactions`, `/ledger/entries`: thực thi và giám sát.
+- `/customer/*`: đăng nhập, dịch vụ động, giao dịch, lịch sử và ví Customer.
 
-API luôn được đọc qua envelope `{ err, message, data }`; `err !== 200` được xem là lỗi kể cả khi HTTP status bằng 200.
+API giữ envelope tương thích `{ err, code?, message, data? }`. HTTP có thể vẫn
+trả `200`; frontend coi `err !== 200` là lỗi nghiệp vụ và ưu tiên `code` để ánh
+xạ thông báo ổn định.
