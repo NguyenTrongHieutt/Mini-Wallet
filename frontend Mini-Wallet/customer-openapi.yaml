@@ -10,11 +10,14 @@ servers:
     description: Local Sails server
 tags:
   - name: Customer Auth
+  - name: Customer Account
+  - name: Customer Wallet
   - name: Customer Services
   - name: Transactions
   - name: Customer Transaction History
 security:
   - bearerAuth: []
+  - cookieAuth: []
 paths:
   /api/v1/customer/auth/register:
     post:
@@ -78,6 +81,55 @@ paths:
       responses:
         "200":
           $ref: "#/components/responses/EnvelopeResponse"
+
+  /api/v1/customer/me:
+    post:
+      tags: [Customer Account]
+      summary: Get the authenticated customer profile
+      description: >
+        The customer identity is resolved from the authenticated session. Any
+        customer identifier supplied by the client is ignored.
+      responses:
+        "200":
+          description: Envelope response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/CustomerProfileData"
+
+  /api/v1/customer/wallet/balance:
+    post:
+      tags: [Customer Wallet]
+      summary: Get the authenticated customer's wallet balance
+      description: >
+        Returns only the wallet owned by the authenticated customer for the
+        requested active currency. Client-supplied customer, owner, or pocket
+        identifiers are ignored.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletBalanceRequest"
+            example:
+              currency: VND
+      responses:
+        "200":
+          description: Envelope response
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Envelope"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/WalletBalanceData"
 
   /api/v1/customer/services/list:
     post:
@@ -317,6 +369,10 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: jwt
   responses:
     EnvelopeResponse:
       description: Envelope response
@@ -382,6 +438,14 @@ components:
           type: string
         password:
           type: string
+    WalletBalanceRequest:
+      type: object
+      properties:
+        currency:
+          type: string
+          pattern: "^(?:[A-Za-z]{3})?$"
+          default: VND
+          description: Three-letter currency code. Blank or omitted values default to VND.
     PublicCustomer:
       type: object
       properties:
@@ -424,9 +488,19 @@ components:
             - type: string
         status:
           type: string
+          enum: [active, locked]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
     AuthInfo:
       type: object
       properties:
+        accessToken:
+          type: string
+          description: JWT dùng trong header Authorization Bearer
         expiresAt:
           type: string
           format: date-time
@@ -449,6 +523,18 @@ components:
           $ref: "#/components/schemas/PublicCustomer"
         auth:
           $ref: "#/components/schemas/AuthInfo"
+    CustomerProfileData:
+      type: object
+      required: [customer]
+      properties:
+        customer:
+          $ref: "#/components/schemas/PublicCustomer"
+    WalletBalanceData:
+      type: object
+      required: [pocket]
+      properties:
+        pocket:
+          $ref: "#/components/schemas/Pocket"
     ServiceListRequest:
       allOf:
         - $ref: "#/components/schemas/PagedSearchRequest"

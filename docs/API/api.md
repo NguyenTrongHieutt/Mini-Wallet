@@ -41,11 +41,27 @@
 | `POST /api/v1/customer/me`          | Xem thông tin profile customer |
 | `POST /api/v1/customer/auth/logout` | Đăng xuất customer             |
 
+`POST /api/v1/customer/me` không nhận customer ID từ client. Profile luôn được
+xác định từ customer đang đăng nhập và chỉ trả các trường public.
+
 ### 2.2. Ví customer
 
 | API                                    | Mục đích                                  |
 | -------------------------------------- | ----------------------------------------- |
 | `POST /api/v1/customer/wallet/balance` | Xem số dư ví, chỉ xem được của chính mình |
+
+Body tùy chọn:
+
+```json
+{
+  "currency": "VND"
+}
+```
+
+Nếu bỏ trống `currency`, API dùng `VND`. Các trường `customerId`, `ownerId` hoặc
+`pocketId` do client gửi không được dùng; ví luôn được truy vấn theo customer
+đang đăng nhập. Response chỉ trả thông tin public của ví và không trả checksum
+hoặc dữ liệu khóa nội bộ.
 
 ### 2.3. Service và Provider
 

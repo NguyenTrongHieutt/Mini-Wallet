@@ -16,6 +16,10 @@ module.exports.policies = {
     '*': 'customerAuth'
   },
 
+  CustomerWalletController: {
+    '*': 'customerAuth'
+  },
+
   TransactionController: {
     request: 'bearerAuth',
     confirm: 'bearerAuth',

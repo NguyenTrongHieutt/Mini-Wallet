@@ -2,6 +2,8 @@ module.exports.routes = {
   "POST /api/v1/customer/auth/register": "CustomerAuthController.register",
   "POST /api/v1/customer/auth/login": "CustomerAuthController.login",
   "POST /api/v1/customer/auth/logout": "CustomerAuthController.logout",
+  "POST /api/v1/customer/me": "CustomerController.me",
+  "POST /api/v1/customer/wallet/balance": "CustomerWalletController.balance",
   "POST /api/v1/officer/auth/login": "OfficerAuthController.login",
   "POST /api/v1/officer/auth/logout": "OfficerAuthController.logout",
   "POST /api/v1/officer/me": "OfficerController.me",
